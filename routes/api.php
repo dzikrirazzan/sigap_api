@@ -5,6 +5,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\PanicController;
+use App\Http\Controllers\RelawanShiftController;
+use App\Http\Controllers\AdminShiftController;
 
 // Route publik
 Route::post('/register', [AuthController::class, 'register']);
@@ -44,6 +46,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/dashboard', function () {
             return response()->json(['message' => 'Relawan Dashboard']);
         });
+        // Relawan cek shift sendiri
+        Route::get('/shifts/me', [RelawanShiftController::class, 'myShifts']);
     });
 
     // Route khusus Admin
@@ -64,6 +68,19 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/dashboard', function () {
             return response()->json(['message' => 'Admin Dashboard']);
         });
+
+        // Manajemen Shift Relawan
+        Route::get('/shifts', [RelawanShiftController::class, 'index']);
+        Route::post('/shifts', [RelawanShiftController::class, 'store']);
+        Route::delete('/shifts/{date}', [RelawanShiftController::class, 'destroy']);
+        Route::get('/relawans', [RelawanShiftController::class, 'getRelawans']);
+        Route::post('/shifts/auto-assign', [RelawanShiftController::class, 'autoAssign']);
+
+        // Admin assign shift relawan
+        Route::post('/admin/assign-shift', [AdminShiftController::class, 'assign']);
+
+        // Admin get shift relawan per minggu
+        Route::get('/shifts/week', [AdminShiftController::class, 'week']);
     });
 
     // Panic Button

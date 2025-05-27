@@ -16,3 +16,8 @@ use Illuminate\Support\Facades\Broadcast;
 Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
     return (int) $user->id === (int) $id;
 });
+
+// Channel untuk relawan menerima panic alerts
+Broadcast::channel('relawan.{relawanId}', function ($user, $relawanId) {
+    return $user->isRelawan() && (int) $user->id === (int) $relawanId;
+});
