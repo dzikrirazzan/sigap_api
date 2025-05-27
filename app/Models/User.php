@@ -85,4 +85,9 @@ class User extends Authenticatable
 
         return $refreshToken;
     }
+
+    public function panicReports()
+    {
+        return $this->hasMany(\App\Models\PanicReport::class);
+    }
 }

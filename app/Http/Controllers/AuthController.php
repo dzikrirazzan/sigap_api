@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
+
 use App\Models\User;
 use App\Models\RefreshToken;
 use Illuminate\Http\Request;
@@ -19,7 +20,7 @@ class AuthController extends Controller
         if (!auth()->user()->isAdmin()) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
-        
+
         return response()->json(User::latest()->get());
     }
 
@@ -32,6 +33,7 @@ class AuthController extends Controller
             'name' => 'required|string',
             'email' => 'required|string|unique:users,email',
             'password' => 'required|string|min:6',
+            'no_telp' => 'required|string|max:15',
             'nim' => 'nullable|string|max:20',
             'jurusan' => 'nullable|string|max:100',
         ]);
@@ -41,19 +43,20 @@ class AuthController extends Controller
             'email' => $fields['email'],
             'password' => bcrypt($fields['password']),
             'role' => User::ROLE_USER,
+            'no_telp' => $fields['no_telp'],
             'nim' => $fields['nim'] ?? null,
             'jurusan' => $fields['jurusan'] ?? null,
         ]);
 
         $token = $user->createToken('access_token')->plainTextToken;
-        
+
         $refreshToken = $user->createRefreshToken();
 
         $response = [
             'user' => $user,
             'access_token' => $token,
             'token_type' => 'Bearer',
-            'expires_in' => config('sanctum.expiration') * 60, 
+            'expires_in' => config('sanctum.expiration') * 60,
             'refresh_token' => $refreshToken->token,
         ];
 
@@ -136,16 +139,16 @@ class AuthController extends Controller
 
         $user = User::where('email', $fields['email'])->first();
 
-        if(!$user || !Hash::check($fields['password'], $user->password)){
+        if (!$user || !Hash::check($fields['password'], $user->password)) {
             return response([
                 'message' => 'Invalid Password or Email',
             ], 401);
         }
 
         $user->tokens()->delete();
-        
+
         $token = $user->createToken('access_token')->plainTextToken;
-        
+
         $refreshToken = $user->createRefreshToken();
 
         $response = [
@@ -182,9 +185,9 @@ class AuthController extends Controller
         $user = $refreshToken->user;
 
         $user->tokens()->delete();
-        
+
         $token = $user->createToken('access_token')->plainTextToken;
-        
+
         $newRefreshToken = $user->createRefreshToken();
 
         return response()->json([
@@ -201,9 +204,9 @@ class AuthController extends Controller
     public function logout(Request $request)
     {
         auth()->user()->currentAccessToken()->delete();
-        
+
         auth()->user()->refreshTokens()->delete();
-        
+
         return response()->json([
             'message' => 'Logged out successfully'
         ]);
@@ -215,17 +218,17 @@ class AuthController extends Controller
     public function show($id)
     {
         $user = User::find($id);
-        
-        if(!$user) {
+
+        if (!$user) {
             return response([
                 'message' => 'User not found'
             ], 404);
         }
-        
+
         if (!auth()->user()->isAdmin() && auth()->id() !== $user->id) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
-        
+
         return response()->json($user);
     }
 
@@ -235,13 +238,13 @@ class AuthController extends Controller
     public function update(Request $request, $id)
     {
         $user = User::find($id);
-        
-        if(!$user) {
+
+        if (!$user) {
             return response([
                 'message' => 'User not found'
             ], 404);
         }
-        
+
         if (!auth()->user()->isAdmin() && auth()->id() !== $user->id) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
@@ -249,9 +252,9 @@ class AuthController extends Controller
         if ($user->isRelawan()) {
             $fields = $request->validate([
                 'name' => 'sometimes|string',
-                'email' => 'sometimes|string|unique:users,email,'.$id,
+                'email' => 'sometimes|string|unique:users,email,' . $id,
                 'password' => 'sometimes|string|min:6',
-                'nik' => 'sometimes|string|size:16|unique:users,nik,'.$id,
+                'nik' => 'sometimes|string|size:16|unique:users,nik,' . $id,
                 'nim' => 'nullable|string|max:20',
                 'jurusan' => 'nullable|string|max:100',
                 'no_telp' => 'sometimes|string|max:15',
@@ -259,7 +262,7 @@ class AuthController extends Controller
         } else {
             $fields = $request->validate([
                 'name' => 'sometimes|string',
-                'email' => 'sometimes|string|unique:users,email,'.$id,
+                'email' => 'sometimes|string|unique:users,email,' . $id,
                 'password' => 'sometimes|string|min:6',
                 'nim' => 'nullable|string|max:20',
                 'jurusan' => 'nullable|string|max:100',
@@ -270,38 +273,38 @@ class AuthController extends Controller
             $user->role = $request->role;
         }
 
-        if(isset($fields['name'])) {
+        if (isset($fields['name'])) {
             $user->name = $fields['name'];
         }
-        
-        if(isset($fields['email'])) {
+
+        if (isset($fields['email'])) {
             $user->email = $fields['email'];
         }
-        
-        if(isset($fields['password'])) {
+
+        if (isset($fields['password'])) {
             $user->password = bcrypt($fields['password']);
         }
-        
-        if(isset($fields['nim'])) {
+
+        if (isset($fields['nim'])) {
             $user->nim = $fields['nim'];
         }
-        
-        if(isset($fields['jurusan'])) {
+
+        if (isset($fields['jurusan'])) {
             $user->jurusan = $fields['jurusan'];
         }
-        
+
         if ($user->isRelawan()) {
-            if(isset($fields['nik'])) {
+            if (isset($fields['nik'])) {
                 $user->nik = $fields['nik'];
             }
-            
-            if(isset($fields['no_telp'])) {
+
+            if (isset($fields['no_telp'])) {
                 $user->no_telp = $fields['no_telp'];
             }
         }
-        
+
         $user->save();
-        
+
         return response()->json([
             'message' => 'User updated successfully',
             'user' => $user
@@ -314,19 +317,19 @@ class AuthController extends Controller
     public function destroy($id)
     {
         $user = User::find($id);
-        
-        if(!$user) {
+
+        if (!$user) {
             return response([
                 'message' => 'User not found'
             ], 404);
         }
-        
+
         if (!auth()->user()->isAdmin()) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
-        
+
         $user->delete();
-        
+
         return response()->json([
             'message' => 'User deleted successfully'
         ]);
@@ -348,9 +351,9 @@ class AuthController extends Controller
         if (!auth()->user()->isAdmin()) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
-        
+
         $relawan = User::where('role', User::ROLE_RELAWAN)->latest()->get();
-        
+
         return response()->json($relawan);
     }
 
@@ -362,9 +365,9 @@ class AuthController extends Controller
         if (!auth()->user()->isAdmin()) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
-        
+
         $users = User::where('role', User::ROLE_USER)->latest()->get();
-        
+
         return response()->json($users);
     }
 }

@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::table('users', function (Blueprint $table) {
             // Add role field
             $table->enum('role', ['user', 'relawan', 'admin'])->default('user')->after('email');
-            
+
             // Add relawan specific fields
             $table->string('nik', 16)->nullable()->after('role');
             $table->string('no_telp', 15)->nullable()->after('nik');
