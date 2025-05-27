@@ -77,7 +77,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/shifts/auto-assign', [RelawanShiftController::class, 'autoAssign']);
 
         // Admin assign shift relawan
-        Route::post('/admin/assign-shift', [AdminShiftController::class, 'assign']);
+        Route::post('/assign-shift', [AdminShiftController::class, 'assign']);
 
         // Admin get shift relawan per minggu
         Route::get('/shifts/week', [AdminShiftController::class, 'week']);
