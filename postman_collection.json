@@ -24,7 +24,22 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "url": { "raw": "{{base_url}}/api/login", "host": ["{{base_url}}"], "path": ["api", "login"] },
             "body": { "mode": "raw", "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password\"\n}" }
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.collectionVariables.set('token', responseJson.access_token);",
+                  "    console.log('Token saved:', responseJson.access_token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
         },
         {
           "name": "Profile",
@@ -114,6 +129,58 @@
           }
         },
         {
+          "name": "Kirim Panic Report Random",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": { "raw": "{{base_url}}/api/panic", "host": ["{{base_url}}"], "path": ["api", "panic"] },
+            "body": { 
+              "mode": "raw", 
+              "raw": "{\n  \"latitude\": {{$randomLatitude}},\n  \"longitude\": {{$randomLongitude}},\n  \"location_description\": \"Emergency at {{$randomStreetName}} - {{$randomCity}}\"\n}" 
+            }
+          },
+          "event": [
+            {
+              "listen": "pre-request",
+              "script": {
+                "exec": [
+                  "// Generate random latitude and longitude for Jakarta area",
+                  "const minLat = -6.4;",
+                  "const maxLat = -6.0;",
+                  "const minLng = 106.5;",
+                  "const maxLng = 107.0;",
+                  "",
+                  "const lat = Math.random() * (maxLat - minLat) + minLat;",
+                  "const lng = Math.random() * (maxLng - minLng) + minLng;",
+                  "",
+                  "pm.collectionVariables.set('randomLatitude', lat.toFixed(6));",
+                  "pm.collectionVariables.set('randomLongitude', lng.toFixed(6));"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Panic report created successfully', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.success).to.be.true;",
+                  "    pm.expect(responseJson.panic).to.have.property('latitude');",
+                  "    pm.expect(responseJson.panic).to.have.property('longitude');",
+                  "    console.log('Panic report created at:', responseJson.panic.latitude, responseJson.panic.longitude);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
           "name": "Lihat Panic Hari Ini (Relawan)",
           "request": {
             "method": "GET",
@@ -152,6 +219,8 @@
   "event": [],
   "variable": [
     { "key": "base_url", "value": "https://sigap-api-5hk6r.ondigitalocean.app" },
-    { "key": "token", "value": "" }
+    { "key": "token", "value": "" },
+    { "key": "randomLatitude", "value": "" },
+    { "key": "randomLongitude", "value": "" }
   ]
 }

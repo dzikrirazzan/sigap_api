@@ -35,7 +35,7 @@ class PanicController extends Controller
         $this->notifyOnDutyRelawan($panic);
 
         return response()->json([
-            'success' => true, 
+            'success' => true,
             'panic' => $panic,
             'message' => 'Panic report sent to on-duty relawan'
         ]);
@@ -57,10 +57,10 @@ class PanicController extends Controller
         }
 
         $panics = PanicReport::whereDate('created_at', $today)
-                            ->with(['user:id,name,email,no_telp,nik', 'handler:id,name'])
-                            ->orderBy('created_at', 'desc')
-                            ->get();
-                            
+            ->with(['user:id,name,email,no_telp,nik', 'handler:id,name'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
         return response()->json($panics);
     }
 
@@ -104,10 +104,10 @@ class PanicController extends Controller
     public function resolve(Request $request, $panicId)
     {
         $relawanId = auth()->id();
-        
+
         $panic = PanicReport::where('id', $panicId)
-                           ->where('handled_by', $relawanId)
-                           ->firstOrFail();
+            ->where('handled_by', $relawanId)
+            ->firstOrFail();
 
         if ($panic->status !== PanicReport::STATUS_HANDLING) {
             return response()->json(['message' => 'Can only resolve reports that are being handled'], 400);
@@ -150,11 +150,11 @@ class PanicController extends Controller
     public function getTodayRelawan()
     {
         $today = Carbon::now()->toDateString();
-        
+
         $relawans = RelawanShift::where('shift_date', $today)
-                               ->with('relawan:id,name,email,no_telp')
-                               ->get()
-                               ->pluck('relawan');
+            ->with('relawan:id,name,email,no_telp')
+            ->get()
+            ->pluck('relawan');
 
         return response()->json([
             'date' => $today,
@@ -165,12 +165,12 @@ class PanicController extends Controller
     private function notifyOnDutyRelawan(PanicReport $panic)
     {
         $today = Carbon::now()->toDateString();
-        
+
         // Dapatkan relawan yang sedang bertugas hari ini
         $onDutyRelawans = RelawanShift::where('shift_date', $today)
-                                     ->with('relawan')
-                                     ->get()
-                                     ->pluck('relawan');
+            ->with('relawan')
+            ->get()
+            ->pluck('relawan');
 
         // Kirim notification ke setiap relawan yang bertugas
         foreach ($onDutyRelawans as $relawan) {
