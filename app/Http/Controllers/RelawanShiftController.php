@@ -139,22 +139,51 @@ class RelawanShiftController extends Controller
         ]);
     }
 
-    // GET: Relawan cek shift sendiri (7 hari ke depan)
+    // GET: Relawan cek shift sendiri 
     public function myShifts(Request $request)
     {
         $user = $request->user();
-        $start = $request->query('start', now()->toDateString());
-        $end = $request->query('end', now()->addDays(6)->toDateString());
+        
+        // Pastikan yang akses adalah relawan
+        if ($user->role !== User::ROLE_RELAWAN) {
+            return response()->json(['message' => 'Access denied. Only relawan can access this endpoint.'], 403);
+        }
+
+        // Default ambil shift 2 minggu (1 minggu ke belakang dan 1 minggu ke depan)
+        $startDate = $request->query('start_date', Carbon::now()->subDays(7)->toDateString());
+        $endDate = $request->query('end_date', Carbon::now()->addDays(7)->toDateString());
 
         $shifts = $user->relawanShifts()
-            ->whereBetween('shift_date', [$start, $end])
-            ->orderBy('shift_date')
-            ->pluck('shift_date');
+            ->whereBetween('shift_date', [$startDate, $endDate])
+            ->orderBy('shift_date', 'desc')
+            ->get();
+
+        $today = Carbon::now()->toDateString();
+        $isOnDutyToday = $shifts->where('shift_date', $today)->isNotEmpty();
 
         return response()->json([
-            'relawan_id' => $user->id,
-            'relawan_nama' => $user->name,
-            'shifts' => $shifts->map(fn($d) => ['date' => $d])->values(),
+            'relawan' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email
+            ],
+            'is_on_duty_today' => $isOnDutyToday,
+            'shifts' => $shifts->map(function($shift) use ($today) {
+                return [
+                    'id' => $shift->id,
+                    'shift_date' => $shift->shift_date,
+                    'is_today' => $shift->shift_date === $today,
+                    'is_past' => $shift->shift_date < $today,
+                    'day_name' => Carbon::parse($shift->shift_date)->locale('id')->isoFormat('dddd'),
+                    'date_formatted' => Carbon::parse($shift->shift_date)->locale('id')->isoFormat('D MMMM YYYY'),
+                    'created_at' => $shift->created_at
+                ];
+            }),
+            'total_shifts' => $shifts->count(),
+            'period' => [
+                'start_date' => $startDate,
+                'end_date' => $endDate
+            ]
         ]);
     }
 }

@@ -162,6 +162,55 @@ class PanicController extends Controller
         ]);
     }
 
+    // Relawan cek shift mereka sendiri
+    public function getMyShifts(Request $request)
+    {
+        $relawanId = auth()->id();
+        $user = auth()->user();
+
+        // Pastikan yang akses adalah relawan
+        if ($user->role !== User::ROLE_RELAWAN) {
+            return response()->json(['message' => 'Access denied. Only relawan can access this endpoint.'], 403);
+        }
+
+        // Default ambil shift 1 minggu ke depan dan ke belakang
+        $startDate = $request->get('start_date', Carbon::now()->subDays(7)->toDateString());
+        $endDate = $request->get('end_date', Carbon::now()->addDays(7)->toDateString());
+
+        $shifts = RelawanShift::where('relawan_id', $relawanId)
+            ->whereBetween('shift_date', [$startDate, $endDate])
+            ->orderBy('shift_date', 'desc')
+            ->get();
+
+        $today = Carbon::now()->toDateString();
+        $isOnDutyToday = $shifts->where('shift_date', $today)->isNotEmpty();
+
+        return response()->json([
+            'relawan' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email
+            ],
+            'is_on_duty_today' => $isOnDutyToday,
+            'shifts' => $shifts->map(function($shift) use ($today) {
+                return [
+                    'id' => $shift->id,
+                    'shift_date' => $shift->shift_date,
+                    'is_today' => $shift->shift_date === $today,
+                    'is_past' => $shift->shift_date < $today,
+                    'day_name' => Carbon::parse($shift->shift_date)->locale('id')->isoFormat('dddd'),
+                    'date_formatted' => Carbon::parse($shift->shift_date)->locale('id')->isoFormat('D MMMM YYYY'),
+                    'created_at' => $shift->created_at
+                ];
+            }),
+            'total_shifts' => $shifts->count(),
+            'period' => [
+                'start_date' => $startDate,
+                'end_date' => $endDate
+            ]
+        ]);
+    }
+
     private function notifyOnDutyRelawan(PanicReport $panic)
     {
         $today = Carbon::now()->toDateString();

@@ -49,6 +49,7 @@
 - `POST /api/admin/shifts` - Buat shift manual
 - `DELETE /api/admin/shifts/{date}` - Hapus shift
 - `POST /api/admin/shifts/auto-assign` - Auto assign shift
+- ✅ `GET /api/relawan/shifts/me` - **NEW!** Relawan cek shift sendiri
 
 ### 5. **Frontend Testing Pages**
 - 📱 `panic-test.html` - Panic button untuk user

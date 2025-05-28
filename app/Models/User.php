@@ -90,4 +90,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(\App\Models\PanicReport::class);
     }
+
+    public function relawanShifts()
+    {
+        return $this->hasMany(\App\Models\RelawanShift::class, 'relawan_id');
+    }
 }
