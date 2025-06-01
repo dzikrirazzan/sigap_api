@@ -16,7 +16,7 @@ class GenerateTestPanicReports extends Command
     {
         $count = (int) $this->argument('count');
         $userId = $this->option('user-id');
-        
+
         if (!$userId) {
             // Cari user dengan role 'user'
             $user = User::where('role', User::ROLE_USER)->first();
@@ -36,17 +36,17 @@ class GenerateTestPanicReports extends Command
         }
 
         $faker = Faker::create('id_ID');
-        
+
         $this->info("Generating {$count} panic reports...");
-        
+
         $progressBar = $this->output->createProgressBar($count);
         $progressBar->start();
-        
+
         for ($i = 0; $i < $count; $i++) {
             // Jakarta area coordinates
             $latitude = $faker->latitude(-6.4, -6.0);
             $longitude = $faker->longitude(106.5, 107.0);
-            
+
             $locations = [
                 'Jl. Sudirman',
                 'Jl. Thamrin',
@@ -59,7 +59,7 @@ class GenerateTestPanicReports extends Command
                 'Jl. Fatmawati',
                 'Jl. Warung Buncit'
             ];
-            
+
             $emergencyTypes = [
                 'Kecelakaan lalu lintas',
                 'Kebakaran',
@@ -70,7 +70,7 @@ class GenerateTestPanicReports extends Command
                 'Gangguan keamanan',
                 'Situasi mencurigakan'
             ];
-            
+
             PanicReport::create([
                 'user_id' => $userId,
                 'latitude' => $latitude,
@@ -83,19 +83,19 @@ class GenerateTestPanicReports extends Command
                 ]),
                 'created_at' => $faker->dateTimeBetween('-7 days', 'now'),
             ]);
-            
+
             $progressBar->advance();
         }
-        
+
         $progressBar->finish();
         $this->newLine();
         $this->info("Successfully generated {$count} panic reports!");
-        
+
         // Show some stats
         $totalPanics = PanicReport::count();
         $todayPanics = PanicReport::whereDate('created_at', today())->count();
         $pendingPanics = PanicReport::where('status', PanicReport::STATUS_PENDING)->count();
-        
+
         $this->newLine();
         $this->info("Stats:");
         $this->line("Total panic reports: {$totalPanics}");

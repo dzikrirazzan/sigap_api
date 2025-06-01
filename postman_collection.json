@@ -137,9 +137,9 @@
               { "key": "Content-Type", "value": "application/json" }
             ],
             "url": { "raw": "{{base_url}}/api/panic", "host": ["{{base_url}}"], "path": ["api", "panic"] },
-            "body": { 
-              "mode": "raw", 
-              "raw": "{\n  \"latitude\": {{$randomLatitude}},\n  \"longitude\": {{$randomLongitude}},\n  \"location_description\": \"Emergency at {{$randomStreetName}} - {{$randomCity}}\"\n}" 
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"latitude\": {{$randomLatitude}},\n  \"longitude\": {{$randomLongitude}},\n  \"location_description\": \"Emergency at {{$randomStreetName}} - {{$randomCity}}\"\n}"
             }
           },
           "event": [

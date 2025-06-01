@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\RelawanShift;
 use App\Models\User;
+use App\Models\RelawanShiftPattern;
 use Carbon\Carbon;
 
 class RelawanShiftController extends Controller
@@ -94,48 +95,100 @@ class RelawanShiftController extends Controller
         return response()->json($relawans);
     }
 
-    // Auto assign shift untuk beberapa hari ke depan
+    // Auto assign shift untuk beberapa hari ke depan berdasarkan pattern
     public function autoAssign(Request $request)
     {
         $request->validate([
-            'days' => 'integer|min:1|max:30'
+            'days' => 'integer|min:1|max:30',
+            'use_patterns' => 'boolean'
         ]);
 
         $days = $request->get('days', 7);
+        $usePatterns = $request->get('use_patterns', true); // Default menggunakan pattern system
         $results = [];
 
         for ($i = 0; $i < $days; $i++) {
             $date = Carbon::today()->addDays($i);
+            $dateString = $date->toDateString();
 
             // Skip jika sudah ada shift
-            $existingCount = RelawanShift::where('shift_date', $date->toDateString())->count();
+            $existingCount = RelawanShift::where('shift_date', $dateString)->count();
             if ($existingCount > 0) {
                 $results[] = [
-                    'date' => $date->toDateString(),
+                    'date' => $dateString,
+                    'day_name' => $date->locale('id')->isoFormat('dddd'),
                     'status' => 'skipped',
                     'message' => 'Shift already exists'
                 ];
                 continue;
             }
 
-            // Panggil artisan command untuk assign shift
-            \Artisan::call('relawan:assign-daily-shift', [
-                'date' => $date->toDateString()
-            ]);
+            if ($usePatterns) {
+                // Gunakan pattern system
+                $dayOfWeek = strtolower($date->format('l')); // monday, tuesday, etc.
+                
+                // Get patterns for this day of week
+                $patterns = RelawanShiftPattern::where('day_of_week', $dayOfWeek)
+                    ->where('is_active', true)
+                    ->with('relawan')
+                    ->get();
 
-            $assignedCount = RelawanShift::where('shift_date', $date->toDateString())->count();
+                if ($patterns->isEmpty()) {
+                    $results[] = [
+                        'date' => $dateString,
+                        'day_name' => $date->locale('id')->isoFormat('dddd'),
+                        'status' => 'skipped',
+                        'message' => 'No pattern defined for this day'
+                    ];
+                    continue;
+                }
 
-            $results[] = [
-                'date' => $date->toDateString(),
-                'status' => 'success',
-                'assigned_count' => $assignedCount
-            ];
+                // Create shifts from patterns
+                $assignedRelawan = [];
+                foreach ($patterns as $pattern) {
+                    RelawanShift::create([
+                        'relawan_id' => $pattern->relawan_id,
+                        'shift_date' => $dateString
+                    ]);
+                    $assignedRelawan[] = $pattern->relawan->name;
+                }
+
+                $results[] = [
+                    'date' => $dateString,
+                    'day_name' => $date->locale('id')->isoFormat('dddd'),
+                    'status' => 'success',
+                    'assigned_count' => count($assignedRelawan),
+                    'relawan' => $assignedRelawan,
+                    'method' => 'pattern-based'
+                ];
+            } else {
+                // Gunakan system lama (artisan command)
+                \Artisan::call('relawan:assign-daily-shift', [
+                    'date' => $dateString
+                ]);
+
+                $assignedCount = RelawanShift::where('shift_date', $dateString)->count();
+
+                $results[] = [
+                    'date' => $dateString,
+                    'day_name' => $date->locale('id')->isoFormat('dddd'),
+                    'status' => 'success',
+                    'assigned_count' => $assignedCount,
+                    'method' => 'legacy-command'
+                ];
+            }
         }
 
         return response()->json([
             'success' => true,
-            'message' => "Auto-assigned shifts for {$days} days",
-            'results' => $results
+            'message' => "Auto-assigned shifts for {$days} days using " . ($usePatterns ? 'pattern system' : 'legacy system'),
+            'results' => $results,
+            'summary' => [
+                'total_days' => $days,
+                'successful' => collect($results)->where('status', 'success')->count(),
+                'skipped' => collect($results)->where('status', 'skipped')->count(),
+                'method' => $usePatterns ? 'pattern-based' : 'legacy-command'
+            ]
         ]);
     }
 
@@ -143,7 +196,7 @@ class RelawanShiftController extends Controller
     public function myShifts(Request $request)
     {
         $user = $request->user();
-        
+
         // Pastikan yang akses adalah relawan
         if ($user->role !== User::ROLE_RELAWAN) {
             return response()->json(['message' => 'Access denied. Only relawan can access this endpoint.'], 403);
@@ -168,7 +221,7 @@ class RelawanShiftController extends Controller
                 'email' => $user->email
             ],
             'is_on_duty_today' => $isOnDutyToday,
-            'shifts' => $shifts->map(function($shift) use ($today) {
+            'shifts' => $shifts->map(function ($shift) use ($today) {
                 return [
                     'id' => $shift->id,
                     'shift_date' => $shift->shift_date,

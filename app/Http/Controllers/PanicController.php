@@ -7,7 +7,6 @@ use App\Models\PanicReport;
 use App\Models\User;
 use App\Models\RelawanShift;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Broadcast;
 
 class PanicController extends Controller
 {
@@ -31,37 +30,61 @@ class PanicController extends Controller
         // Load relasi user dengan data lengkap termasuk no_telp
         $panic->load('user');
 
-        // Broadcast ke relawan yang sedang bertugas hari ini
-        $this->notifyOnDutyRelawan($panic);
-
         return response()->json([
             'success' => true,
             'panic' => $panic,
-            'message' => 'Panic report sent to on-duty relawan'
+            'message' => 'Panic report created successfully'
         ]);
     }
 
     // Relawan on duty hari ini melihat panic report hari ini
+    // Admin juga bisa melihat semua panic report hari ini
     public function today(Request $request)
     {
         $today = Carbon::now()->toDateString();
-        $relawanId = auth()->id();
+        $user = auth()->user();
+        $userId = auth()->id();
 
-        // Cek apakah relawan ini on duty hari ini
-        $onDuty = RelawanShift::where('relawan_id', $relawanId)
-            ->where('shift_date', $today)
-            ->exists();
+        // Jika user adalah admin, berikan akses penuh ke semua panic reports hari ini
+        if ($user->role === 'admin') {
+            $panics = PanicReport::whereDate('created_at', $today)
+                ->with(['user:id,name,email,no_telp,nik', 'handler:id,name'])
+                ->orderBy('created_at', 'desc')
+                ->get();
 
-        if (!$onDuty) {
-            return response()->json(['message' => 'Not on duty today'], 403);
+            return response()->json([
+                'user_type' => 'admin',
+                'today' => $today,
+                'total_reports' => $panics->count(),
+                'data' => $panics
+            ]);
         }
 
-        $panics = PanicReport::whereDate('created_at', $today)
-            ->with(['user:id,name,email,no_telp,nik', 'handler:id,name'])
-            ->orderBy('created_at', 'desc')
-            ->get();
+        // Jika user adalah relawan, cek apakah sedang bertugas hari ini
+        if ($user->role === 'relawan') {
+            $onDuty = RelawanShift::where('relawan_id', $userId)
+                ->where('shift_date', $today)
+                ->exists();
 
-        return response()->json($panics);
+            if (!$onDuty) {
+                return response()->json(['message' => 'Not on duty today'], 403);
+            }
+
+            $panics = PanicReport::whereDate('created_at', $today)
+                ->with(['user:id,name,email,no_telp,nik', 'handler:id,name'])
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            return response()->json([
+                'user_type' => 'relawan',
+                'today' => $today,
+                'total_reports' => $panics->count(),
+                'data' => $panics
+            ]);
+        }
+
+        // Jika bukan admin atau relawan
+        return response()->json(['message' => 'Unauthorized. Admin or Relawan access required.'], 403);
     }
 
     // Relawan mengambil/handle panic report
@@ -192,7 +215,7 @@ class PanicController extends Controller
                 'email' => $user->email
             ],
             'is_on_duty_today' => $isOnDutyToday,
-            'shifts' => $shifts->map(function($shift) use ($today) {
+            'shifts' => $shifts->map(function ($shift) use ($today) {
                 return [
                     'id' => $shift->id,
                     'shift_date' => $shift->shift_date,
@@ -209,22 +232,5 @@ class PanicController extends Controller
                 'end_date' => $endDate
             ]
         ]);
-    }
-
-    private function notifyOnDutyRelawan(PanicReport $panic)
-    {
-        $today = Carbon::now()->toDateString();
-
-        // Dapatkan relawan yang sedang bertugas hari ini
-        $onDutyRelawans = RelawanShift::where('shift_date', $today)
-            ->with('relawan')
-            ->get()
-            ->pluck('relawan');
-
-        // Kirim notification ke setiap relawan yang bertugas
-        foreach ($onDutyRelawans as $relawan) {
-            // Broadcast real-time notification
-            broadcast(new \App\Events\PanicAlert($panic, $relawan->id));
-        }
     }
 }

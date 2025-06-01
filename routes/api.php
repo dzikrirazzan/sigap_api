@@ -7,6 +7,7 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\PanicController;
 use App\Http\Controllers\RelawanShiftController;
 use App\Http\Controllers\AdminShiftController;
+use App\Http\Controllers\RelawanShiftPatternController;
 
 // Route publik
 Route::post('/register', [AuthController::class, 'register']);
@@ -74,18 +75,32 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/shifts', [RelawanShiftController::class, 'store']);
         Route::delete('/shifts/{date}', [RelawanShiftController::class, 'destroy']);
         Route::get('/relawans', [RelawanShiftController::class, 'getRelawans']);
-        Route::post('/shifts/auto-assign', [RelawanShiftController::class, 'autoAssign']);
+        Route::post('/shifts/auto-assign', [RelawanShiftController::class, 'autoAssign']); // Updated to support patterns
 
         // Admin assign shift relawan
         Route::post('/assign-shift', [AdminShiftController::class, 'assign']);
 
         // Admin get shift relawan per minggu
         Route::get('/shifts/week', [AdminShiftController::class, 'week']);
+
+        // Manajemen Shift Pattern (Pola Mingguan)
+        Route::prefix('shift-patterns')->group(function () {
+            // CRUD shift patterns
+            Route::get('/', [RelawanShiftPatternController::class, 'index']); // Get all patterns grouped by day
+            Route::post('/', [RelawanShiftPatternController::class, 'store']); // Create/update patterns for specific day
+            Route::delete('/{id}', [RelawanShiftPatternController::class, 'destroy']); // Delete specific pattern
+            Route::delete('/day/{dayOfWeek}', [RelawanShiftPatternController::class, 'destroyDay']); // Delete all patterns for a day
+            
+            // Pattern utilities
+            Route::get('/relawan', [RelawanShiftPatternController::class, 'getAvailableRelawan']); // Get available relawan
+            Route::post('/copy', [RelawanShiftPatternController::class, 'copyPattern']); // Copy pattern between days
+            Route::post('/generate-shifts', [RelawanShiftPatternController::class, 'generateShifts']); // Generate actual shifts from patterns
+        });
     });
 
     // Panic Button
     Route::middleware('auth:sanctum')->post('/panic', [PanicController::class, 'store']);
-    Route::middleware(['auth:sanctum', 'relawan'])->get('/panic-today', [PanicController::class, 'today']);
+    Route::middleware('auth:sanctum')->get('/panic-today', [PanicController::class, 'today']); // Admin dan Relawan bisa akses
     Route::middleware(['auth:sanctum', 'relawan'])->post('/panic/{panicId}/handle', [PanicController::class, 'handle']);
     Route::middleware(['auth:sanctum', 'relawan'])->post('/panic/{panicId}/resolve', [PanicController::class, 'resolve']);
     Route::middleware(['auth:sanctum', 'admin'])->get('/panic/admin', [PanicController::class, 'adminIndex']);

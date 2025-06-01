@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emergency API - Frontend Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .auth-section, .dashboard {
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e8ed;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin: 5px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #00b894, #00a085);
+        }
+
+        .btn-emergency {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            font-size: 18px;
+            padding: 15px 30px;
+            border-radius: 50px;
+            margin: 20px 0;
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-weight: 600;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .panic-alert {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 10px 0;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #e9ecef;
+        }
+
+        .card h3 {
+            color: #495057;
+            margin-bottom: 15px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .logs {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 20px 0;
+        }
+
+        .logs .timestamp {
+            color: #3498db;
+        }
+
+        .logs .error {
+            color: #e74c3c;
+        }
+
+        .logs .success {
+            color: #2ecc71;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚨 Emergency API</h1>
+            <p>Frontend Integration Demo - Real-time Emergency Response System</p>
+        </div>
+
+        <div class="content">
+            <!-- Authentication Section -->
+            <div id="authSection" class="auth-section">
+                <div class="card">
+                    <h3>🔐 Authentication</h3>
+                    <div class="form-group">
+                        <label for="email">Email:</label>
+                        <input type="email" id="email" placeholder="Enter your email" value="tesdzikri@students.undip.ac.id">
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password:</label>
+                        <input type="password" id="password" placeholder="Enter your password" value="password">
+                    </div>
+                    <button class="btn" onclick="login()">Login</button>
+                </div>
+            </div>
+
+            <!-- Dashboard Section -->
+            <div id="dashboardSection" class="dashboard hidden">
+                <div class="grid">
+                    <!-- User Dashboard -->
+                    <div id="userDashboard" class="card hidden">
+                        <h3>👤 User Dashboard</h3>
+                        <p id="userInfo"></p>
+                        <button class="btn btn-emergency" onclick="sendEmergencyAlert()">🚨 EMERGENCY BUTTON</button>
+                        <div class="form-group">
+                            <label for="locationDesc">Location Description:</label>
+                            <input type="text" id="locationDesc" placeholder="Describe your emergency location">
+                        </div>
+                    </div>
+
+                    <!-- Relawan Dashboard -->
+                    <div id="relawanDashboard" class="card hidden">
+                        <h3>🚑 Relawan Dashboard</h3>
+                        <p id="relawanInfo"></p>
+                        <button class="btn" onclick="getTodayPanics()">Refresh Panic Reports</button>
+                        <button class="btn btn-success" onclick="getMyShifts()">My Shifts</button>
+                        <div id="panicReports"></div>
+                        <div id="shiftInfo"></div>
+                    </div>
+                </div>
+
+                <button class="btn btn-danger" onclick="logout()">Logout</button>
+            </div>
+
+            <!-- Status Messages -->
+            <div id="statusMessages"></div>
+
+            <!-- Real-time Alerts -->
+            <div id="realTimeAlerts"></div>
+
+            <!-- Logs -->
+            <div class="logs" id="logs">
+                <div class="timestamp">[Ready]</div> Frontend demo initialized. Ready to connect to Emergency API.
+            </div>
+        </div>
+    </div>
+
+    <script src="emergency-api-client.js"></script>
+    <script>
+        // Initialize API Client
+        const apiClient = new EmergencyAPIClient({
+            apiUrl: 'http://localhost:8000/api'
+        });
+
+        let currentUser = null;
+
+        // Utility Functions
+        function log(message, type = 'info') {
+            const logs = document.getElementById('logs');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.innerHTML = `<span class="timestamp">[${timestamp}]</span> <span class="${type}">${message}</span>`;
+            logs.appendChild(logEntry);
+            logs.scrollTop = logs.scrollHeight;
+        }
+
+        function showStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('statusMessages');
+            const statusElement = document.createElement('div');
+            statusElement.className = `status ${type}`;
+            statusElement.textContent = message;
+            statusDiv.appendChild(statusElement);
+            
+            setTimeout(() => {
+                statusElement.remove();
+            }, 5000);
+        }
+
+        function showPanicAlert(panicData) {
+            const alertsDiv = document.getElementById('realTimeAlerts');
+            const alertElement = document.createElement('div');
+            alertElement.className = 'panic-alert';
+            alertElement.innerHTML = `
+                <h4>🚨 NEW EMERGENCY ALERT!</h4>
+                <p><strong>User:</strong> ${panicData.user.name}</p>
+                <p><strong>Phone:</strong> ${panicData.user.no_telp || 'Not provided'}</p>
+                <p><strong>Location:</strong> ${panicData.location_description}</p>
+                <p><strong>Coordinates:</strong> ${panicData.latitude}, ${panicData.longitude}</p>
+                <p><strong>Time:</strong> ${new Date(panicData.created_at).toLocaleString()}</p>
+                <button class="btn btn-success" onclick="handlePanic(${panicData.id})">Handle Emergency</button>
+                <button class="btn" onclick="openMaps(${panicData.latitude}, ${panicData.longitude})">Open in Maps</button>
+            `;
+            alertsDiv.appendChild(alertElement);
+            
+            // Play alert sound (if available)
+            try {
+                const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmccDkONzvLUfDMGLYbJ7+OfUAwKVqnp77FdF');
+                audio.play();
+            } catch (e) {
+                console.log('Audio not available');
+            }
+
+            log(`New emergency alert received from ${panicData.user.name}`, 'error');
+        }
+
+        // Authentication Functions
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                log('Attempting login...');
+                const result = await apiClient.login(email, password);
+                currentUser = result.user;
+                
+                log(`Login successful for ${currentUser.name} (${currentUser.role})`, 'success');
+                showStatus(`Welcome ${currentUser.name}!`, 'success');
+                
+                // Show appropriate dashboard
+                document.getElementById('authSection').classList.add('hidden');
+                document.getElementById('dashboardSection').classList.remove('hidden');
+                
+                if (currentUser.role === 'user') {
+                    document.getElementById('userDashboard').classList.remove('hidden');
+                    document.getElementById('userInfo').textContent = `Logged in as: ${currentUser.name} (${currentUser.email})`;
+                } else if (currentUser.role === 'relawan') {
+                    document.getElementById('relawanDashboard').classList.remove('hidden');
+                    document.getElementById('relawanInfo').textContent = `Logged in as: ${currentUser.name} (${currentUser.email})`;
+                }
+                
+                // Request notification permission
+                await apiClient.requestNotificationPermission();
+                
+            } catch (error) {
+                log(`Login failed: ${error.message}`, 'error');
+                showStatus(`Login failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function logout() {
+            try {
+                await apiClient.logout();
+                currentUser = null;
+                log('Logged out successfully', 'success');
+                
+                // Reset UI
+                document.getElementById('authSection').classList.remove('hidden');
+                document.getElementById('dashboardSection').classList.add('hidden');
+                document.getElementById('userDashboard').classList.add('hidden');
+                document.getElementById('relawanDashboard').classList.add('hidden');
+                
+                showStatus('Logged out successfully', 'success');
+                
+            } catch (error) {
+                log(`Logout error: ${error.message}`, 'error');
+            }
+        }
+
+        // Emergency Functions
+        async function sendEmergencyAlert() {
+            try {
+                log('Getting current location...');
+                const location = await apiClient.getCurrentLocation();
+                const description = document.getElementById('locationDesc').value || 'Emergency situation';
+                
+                log('Sending emergency alert...');
+                const result = await apiClient.sendPanicAlert(
+                    location.latitude,
+                    location.longitude,
+                    description
+                );
+                
+                log(`Emergency alert sent successfully! ID: ${result.panic.id}`, 'success');
+                showStatus('Emergency alert sent! Help is on the way.', 'success');
+                
+            } catch (error) {
+                log(`Failed to send emergency alert: ${error.message}`, 'error');
+                showStatus(`Failed to send emergency alert: ${error.message}`, 'error');
+            }
+        }
+
+        // Relawan Functions
+        async function getTodayPanics() {
+            try {
+                log('Fetching today\'s panic reports...');
+                const panics = await apiClient.getTodayPanics();
+                
+                const reportsDiv = document.getElementById('panicReports');
+                reportsDiv.innerHTML = '<h4>Today\'s Panic Reports:</h4>';
+                
+                if (panics.length === 0) {
+                    reportsDiv.innerHTML += '<p>No panic reports today.</p>';
+                } else {
+                    panics.forEach(panic => {
+                        const panicElement = document.createElement('div');
+                        panicElement.className = 'panic-alert';
+                        panicElement.innerHTML = `
+                            <p><strong>ID:</strong> ${panic.id}</p>
+                            <p><strong>User:</strong> ${panic.user.name} (${panic.user.email})</p>
+                            <p><strong>Phone:</strong> ${panic.user.no_telp || 'Not provided'}</p>
+                            <p><strong>Location:</strong> ${panic.location_description}</p>
+                            <p><strong>Status:</strong> ${panic.status}</p>
+                            <p><strong>Time:</strong> ${new Date(panic.created_at).toLocaleString()}</p>
+                            ${panic.status === 'pending' ? 
+                                `<button class="btn btn-success" onclick="handlePanic(${panic.id})">Handle</button>` : 
+                                `<button class="btn" onclick="resolvePanic(${panic.id})">Resolve</button>`
+                            }
+                            <button class="btn" onclick="openMaps(${panic.latitude}, ${panic.longitude})">Maps</button>
+                        `;
+                        reportsDiv.appendChild(panicElement);
+                    });
+                }
+                
+                log(`Loaded ${panics.length} panic reports`, 'success');
+                
+            } catch (error) {
+                log(`Failed to fetch panic reports: ${error.message}`, 'error');
+                showStatus(`Failed to fetch panic reports: ${error.message}`, 'error');
+            }
+        }
+
+        async function handlePanic(panicId) {
+            try {
+                log(`Handling panic report ${panicId}...`);
+                const result = await apiClient.handlePanic(panicId);
+                
+                log(`Panic ${panicId} handled successfully`, 'success');
+                showStatus('Panic report handled successfully', 'success');
+                
+                // Refresh panic reports
+                getTodayPanics();
+                
+            } catch (error) {
+                log(`Failed to handle panic ${panicId}: ${error.message}`, 'error');
+                showStatus(`Failed to handle panic: ${error.message}`, 'error');
+            }
+        }
+
+        async function resolvePanic(panicId) {
+            try {
+                log(`Resolving panic report ${panicId}...`);
+                const result = await apiClient.resolvePanic(panicId);
+                
+                log(`Panic ${panicId} resolved successfully`, 'success');
+                showStatus('Panic report resolved successfully', 'success');
+                
+                // Refresh panic reports
+                getTodayPanics();
+                
+            } catch (error) {
+                log(`Failed to resolve panic ${panicId}: ${error.message}`, 'error');
+                showStatus(`Failed to resolve panic: ${error.message}`, 'error');
+            }
+        }
+
+        async function getMyShifts() {
+            try {
+                log('Fetching my shifts...');
+                const result = await apiClient.getMyShifts();
+                
+                const shiftDiv = document.getElementById('shiftInfo');
+                shiftDiv.innerHTML = `
+                    <h4>My Shifts:</h4>
+                    <p><strong>On duty today:</strong> ${result.is_on_duty_today ? 'Yes' : 'No'}</p>
+                    <p><strong>Total shifts:</strong> ${result.total_shifts}</p>
+                `;
+                
+                if (result.shifts.length > 0) {
+                    const shiftsHtml = result.shifts.map(shift => `
+                        <div class="status ${shift.is_today ? 'info' : ''}">
+                            ${shift.date_formatted} (${shift.day_name}) 
+                            ${shift.is_today ? '- TODAY' : ''}
+                            ${shift.is_past ? '- PAST' : ''}
+                        </div>
+                    `).join('');
+                    shiftDiv.innerHTML += shiftsHtml;
+                }
+                
+                log(`Loaded ${result.shifts.length} shifts`, 'success');
+                
+            } catch (error) {
+                log(`Failed to fetch shifts: ${error.message}`, 'error');
+                showStatus(`Failed to fetch shifts: ${error.message}`, 'error');
+            }
+        }
+
+        // Utility Functions
+        function openMaps(latitude, longitude) {
+            const url = `https://www.google.com/maps?q=${latitude},${longitude}`;
+            window.open(url, '_blank');
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            log('Frontend demo loaded successfully');
+            
+            // Check if already logged in
+            if (apiClient.isAuthenticated()) {
+                const userData = apiClient.getCurrentUser();
+                if (userData) {
+                    currentUser = userData;
+                    log(`Already logged in as ${userData.name}`, 'info');
+                }
+            }
+        });
+    </script>
+</body>
+</html>

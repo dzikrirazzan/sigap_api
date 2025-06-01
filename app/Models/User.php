@@ -95,4 +95,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(\App\Models\RelawanShift::class, 'relawan_id');
     }
+
+    public function shiftPatterns()
+    {
+        return $this->hasMany(\App\Models\RelawanShiftPattern::class, 'relawan_id');
+    }
 }
