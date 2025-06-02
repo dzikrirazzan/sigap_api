@@ -25,12 +25,6 @@ class PanicReport extends BaseModel
         'updated_at' => 'datetime',
     ];
 
-    // Override untuk memastikan timestamp menggunakan Jakarta timezone
-    protected function serializeDate(\DateTimeInterface $date)
-    {
-        return $date->setTimezone(new \DateTimeZone('Asia/Jakarta'))->format('Y-m-d\TH:i:s.uP');
-    }
-
     // Status constants
     const STATUS_PENDING = 'pending';
     const STATUS_HANDLING = 'handling';
@@ -60,16 +54,5 @@ class PanicReport extends BaseModel
     public function getLocationUrlAttribute()
     {
         return "https://maps.google.com/maps?q={$this->latitude},{$this->longitude}";
-    }
-
-    // Override untuk memastikan timezone Jakarta
-    public function getCreatedAtAttribute($value)
-    {
-        return $this->asDateTime($value)->setTimezone('Asia/Jakarta');
-    }
-
-    public function getUpdatedAtAttribute($value)
-    {
-        return $this->asDateTime($value)->setTimezone('Asia/Jakarta');
     }
 }

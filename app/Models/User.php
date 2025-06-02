@@ -19,6 +19,22 @@ class User extends Authenticatable
         return $date->setTimezone(new \DateTimeZone('Asia/Jakarta'))->format('Y-m-d\TH:i:s.uP');
     }
 
+    /**
+     * Override asDateTime untuk memastikan semua datetime menggunakan timezone Jakarta
+     */
+    protected function asDateTime($value)
+    {
+        // Panggil parent method dulu
+        $datetime = parent::asDateTime($value);
+
+        // Jika datetime berhasil dibuat, set timezone ke Jakarta
+        if ($datetime) {
+            return $datetime->setTimezone('Asia/Jakarta');
+        }
+
+        return $datetime;
+    }
+
     const ROLE_USER = 'user';
     const ROLE_RELAWAN = 'relawan';
     const ROLE_ADMIN = 'admin';
@@ -56,6 +72,8 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
 
     public function isAdmin()

@@ -11,23 +11,34 @@ class BaseModel extends Model
      */
     protected function serializeDate(\DateTimeInterface $date)
     {
-        // Konversi ke timezone Jakarta dan format dengan offset +07:00
+        // Selalu konversi ke timezone Jakarta dengan offset +07:00
         return $date->setTimezone(new \DateTimeZone('Asia/Jakarta'))->format('Y-m-d\TH:i:s.uP');
     }
 
     /**
-     * Override created_at accessor
+     * Override asDateTime untuk memastikan semua datetime menggunakan timezone Jakarta
      */
-    public function getCreatedAtAttribute($value)
+    protected function asDateTime($value)
     {
-        return $this->asDateTime($value)->setTimezone('Asia/Jakarta');
+        // Panggil parent method dulu
+        $datetime = parent::asDateTime($value);
+
+        // Jika datetime berhasil dibuat, set timezone ke Jakarta
+        if ($datetime) {
+            return $datetime->setTimezone('Asia/Jakarta');
+        }
+
+        return $datetime;
     }
 
     /**
-     * Override updated_at accessor
+     * Override handled_at accessor untuk PanicReport
      */
-    public function getUpdatedAtAttribute($value)
+    public function getHandledAtAttribute($value)
     {
-        return $this->asDateTime($value)->setTimezone('Asia/Jakarta');
+        if ($value) {
+            return $this->asDateTime($value)->setTimezone('Asia/Jakarta');
+        }
+        return $value;
     }
 }
