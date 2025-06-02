@@ -20,12 +20,14 @@ class PanicReport extends BaseModel
 
     protected $casts = [
         'handled_at' => 'datetime',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
 
     // Override untuk memastikan timestamp menggunakan Jakarta timezone
     protected function serializeDate(\DateTimeInterface $date)
     {
-        return $date->setTimezone(new \DateTimeZone('Asia/Jakarta'))->format('Y-m-d\TH:i:s.u\Z');
+        return $date->setTimezone(new \DateTimeZone('Asia/Jakarta'))->format('Y-m-d\TH:i:s.uP');
     }
 
     // Status constants

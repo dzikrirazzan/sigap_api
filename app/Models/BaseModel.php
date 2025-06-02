@@ -11,7 +11,7 @@ class BaseModel extends Model
      */
     protected function serializeDate(\DateTimeInterface $date)
     {
-        // Konversi ke timezone Jakarta dan format tanpa Z
+        // Konversi ke timezone Jakarta dan format dengan offset +07:00
         return $date->setTimezone(new \DateTimeZone('Asia/Jakarta'))->format('Y-m-d\TH:i:s.uP');
     }
 
