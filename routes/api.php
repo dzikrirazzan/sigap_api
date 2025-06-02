@@ -90,7 +90,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('/', [RelawanShiftPatternController::class, 'store']); // Create/update patterns for specific day
             Route::delete('/{id}', [RelawanShiftPatternController::class, 'destroy']); // Delete specific pattern
             Route::delete('/day/{dayOfWeek}', [RelawanShiftPatternController::class, 'destroyDay']); // Delete all patterns for a day
-            
+
             // Pattern utilities
             Route::get('/relawan', [RelawanShiftPatternController::class, 'getAvailableRelawan']); // Get available relawan
             Route::post('/copy', [RelawanShiftPatternController::class, 'copyPattern']); // Copy pattern between days

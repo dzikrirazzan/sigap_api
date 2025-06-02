@@ -22,7 +22,7 @@ class RelawanShiftPattern extends Model
     // Days of week constants
     const DAYS = [
         'monday' => 'Senin',
-        'tuesday' => 'Selasa', 
+        'tuesday' => 'Selasa',
         'wednesday' => 'Rabu',
         'thursday' => 'Kamis',
         'friday' => 'Jumat',

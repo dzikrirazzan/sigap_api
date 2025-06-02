@@ -17,7 +17,7 @@ return new class extends Migration
             $table->foreignId('relawan_id')->constrained('users')->onDelete('cascade');
             $table->boolean('is_active')->default(true);
             $table->timestamps();
-            
+
             // Unique constraint: satu relawan hanya bisa punya satu pattern per hari
             $table->unique(['day_of_week', 'relawan_id']);
         });

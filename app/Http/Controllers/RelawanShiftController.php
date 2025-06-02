@@ -126,7 +126,7 @@ class RelawanShiftController extends Controller
             if ($usePatterns) {
                 // Gunakan pattern system
                 $dayOfWeek = strtolower($date->format('l')); // monday, tuesday, etc.
-                
+
                 // Get patterns for this day of week
                 $patterns = RelawanShiftPattern::where('day_of_week', $dayOfWeek)
                     ->where('is_active', true)

@@ -114,7 +114,7 @@ class RelawanShiftPatternController extends Controller
         $pattern = RelawanShiftPattern::findOrFail($id);
         $dayName = $pattern->day_name;
         $relawanName = $pattern->relawan->name;
-        
+
         $pattern->delete();
 
         return response()->json([
@@ -145,7 +145,7 @@ class RelawanShiftPatternController extends Controller
 
             // Check if shifts already exist
             $existingShifts = RelawanShift::where('shift_date', $dateString)->count();
-            
+
             if ($existingShifts > 0 && !$overwrite) {
                 $results[] = [
                     'date' => $dateString,
@@ -259,7 +259,7 @@ class RelawanShiftPatternController extends Controller
 
         // Get source patterns
         $sourcePatterns = RelawanShiftPattern::where('day_of_week', $fromDay)->get();
-        
+
         if ($sourcePatterns->isEmpty()) {
             return response()->json([
                 'success' => false,

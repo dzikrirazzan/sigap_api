@@ -53,7 +53,7 @@ class RelawanShiftPatternSeeder extends Seeder
         }
 
         $this->command->info("Total shift patterns created: {$totalCreated}");
-        
+
         // Tampilkan summary
         $this->command->info("\n=== SHIFT PATTERN SUMMARY ===");
         foreach (RelawanShiftPattern::DAYS as $dayKey => $dayName) {
@@ -63,7 +63,7 @@ class RelawanShiftPatternSeeder extends Seeder
                 ->get()
                 ->pluck('relawan.name')
                 ->join(', ');
-            
+
             $this->command->info("{$dayName}: {$count} relawan ({$relawanNames})");
         }
     }

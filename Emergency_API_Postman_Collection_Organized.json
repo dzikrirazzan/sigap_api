@@ -1,0 +1,979 @@
+{
+  "info": {
+    "_postman_id": "emergency-api-organized",
+    "name": "Emergency API - Organized by User Role",
+    "description": "Emergency Response System API organized by user roles: Public, User, Relawan, and Admin",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{auth_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://sigap-api-5hk6r.ondigitalocean.app/api",
+      "type": "string"
+    },
+    {
+      "key": "auth_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "panic_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "report_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "shift_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "pattern_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "📱 PUBLIC ENDPOINTS",
+      "description": "Endpoints yang bisa diakses tanpa authentication",
+      "item": [
+        {
+          "name": "Register User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    console.log('User registered successfully:', response.user.name);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Test User\",\n    \"email\": \"testuser@example.com\",\n    \"password\": \"password123\",\n    \"password_confirmation\": \"password123\",\n    \"no_telp\": \"081234567890\",\n    \"alamat\": \"Jl. Test No. 123\",\n    \"nik\": \"1234567890123456\",\n    \"tanggal_lahir\": \"1995-01-01\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/register",
+              "host": ["{{base_url}}"],
+              "path": ["register"]
+            },
+            "description": "Register pengguna umum (public access)"
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('auth_token', response.token);",
+                  "    pm.collectionVariables.set('user_id', response.user.id);",
+                  "    console.log('Login successful for:', response.user.name);",
+                  "    console.log('User role:', response.user.role);",
+                  "    console.log('Token saved:', response.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"tesdzikri@students.undip.ac.id\",\n    \"password\": \"password\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/login",
+              "host": ["{{base_url}}"],
+              "path": ["login"]
+            },
+            "description": "Login untuk semua tipe user (admin, relawan, user)"
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{base_url}}/refresh",
+              "host": ["{{base_url}}"],
+              "path": ["refresh"]
+            },
+            "description": "Refresh access token menggunakan refresh token"
+          }
+        }
+      ]
+    },
+    {
+      "name": "👤 USER ENDPOINTS",
+      "description": "Endpoints untuk pengguna umum (user role)",
+      "item": [
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/profile",
+              "host": ["{{base_url}}"],
+              "path": ["profile"]
+            },
+            "description": "Melihat profil sendiri"
+          }
+        },
+        {
+          "name": "Update My Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Updated User Name\",\n    \"no_telp\": \"081234567899\",\n    \"alamat\": \"Jl. Updated Address No. 456\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["users", "{{user_id}}"]
+            },
+            "description": "Update profil sendiri"
+          }
+        },
+        {
+          "name": "Send Panic Alert",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('panic_id', response.panic.id);",
+                  "    console.log('Panic Alert sent! ID:', response.panic.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"latitude\": -7.2575,\n    \"longitude\": 112.7521,\n    \"location_description\": \"Dekat kampus UNDIP, area parkir timur\",\n    \"emergency_type\": \"medical\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/panic",
+              "host": ["{{base_url}}"],
+              "path": ["panic"]
+            },
+            "description": "Kirim panic alert darurat"
+          }
+        },
+        {
+          "name": "Create Report",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('report_id', response.report.id);",
+                  "    console.log('Report created! ID:', response.report.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"problem_type\": \"infrastruktur\",\n    \"description\": \"Lampu jalan di depan kampus tidak menyala sudah 3 hari\",\n    \"location\": \"Jl. Prof. Soedarto, SH, Tembalang\",\n    \"latitude\": -7.2575,\n    \"longitude\": 112.7521,\n    \"urgency_level\": \"medium\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/reports",
+              "host": ["{{base_url}}"],
+              "path": ["reports"]
+            },
+            "description": "Buat laporan masalah baru"
+          }
+        },
+        {
+          "name": "Get My Reports",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/reports",
+              "host": ["{{base_url}}"],
+              "path": ["reports"]
+            },
+            "description": "Lihat semua laporan yang dibuat"
+          }
+        },
+        {
+          "name": "Update My Report",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"description\": \"Lampu jalan di depan kampus tidak menyala sudah 3 hari - UPDATE: Sudah dilaporkan ke PLN\",\n    \"urgency_level\": \"high\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/reports/{{report_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["reports", "{{report_id}}"]
+            },
+            "description": "Update laporan yang dibuat"
+          }
+        },
+        {
+          "name": "Delete My Report",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/reports/{{report_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["reports", "{{report_id}}"]
+            },
+            "description": "Hapus laporan yang dibuat"
+          }
+        },
+        {
+          "name": "Upload Photo",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "photo",
+                  "type": "file",
+                  "src": [],
+                  "description": "File foto untuk laporan"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/upload-photo",
+              "host": ["{{base_url}}"],
+              "path": ["upload-photo"]
+            },
+            "description": "Upload foto untuk laporan"
+          }
+        },
+        {
+          "name": "Get Problem Types",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/problem-types",
+              "host": ["{{base_url}}"],
+              "path": ["problem-types"]
+            },
+            "description": "Dapatkan daftar tipe masalah untuk dropdown"
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{base_url}}/logout",
+              "host": ["{{base_url}}"],
+              "path": ["logout"]
+            },
+            "description": "Logout dan hapus token"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🚨 RELAWAN ENDPOINTS",
+      "description": "Endpoints khusus untuk relawan",
+      "item": [
+        {
+          "name": "Relawan Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/relawan/dashboard",
+              "host": ["{{base_url}}"],
+              "path": ["relawan", "dashboard"]
+            },
+            "description": "Dashboard info untuk relawan"
+          }
+        },
+        {
+          "name": "Get My Shifts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/relawan/shifts/me?start_date=2025-06-01&end_date=2025-06-30",
+              "host": ["{{base_url}}"],
+              "path": ["relawan", "shifts", "me"],
+              "query": [
+                {
+                  "key": "start_date",
+                  "value": "2025-06-01",
+                  "description": "Tanggal mulai (opsional)"
+                },
+                {
+                  "key": "end_date",
+                  "value": "2025-06-30",
+                  "description": "Tanggal akhir (opsional)"
+                }
+              ]
+            },
+            "description": "Lihat jadwal shift sendiri"
+          }
+        },
+        {
+          "name": "Get Today Panic Reports",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/panic-today",
+              "host": ["{{base_url}}"],
+              "path": ["panic-today"]
+            },
+            "description": "Lihat panic reports hari ini (hanya yang on duty)"
+          }
+        },
+        {
+          "name": "Handle Panic Report",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"response_notes\": \"Tim medis sedang dalam perjalanan ke lokasi\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/panic/{{panic_id}}/handle",
+              "host": ["{{base_url}}"],
+              "path": ["panic", "{{panic_id}}", "handle"]
+            },
+            "description": "Ambil/handle panic report"
+          }
+        },
+        {
+          "name": "Resolve Panic Report",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"resolution_notes\": \"Situasi darurat telah ditangani dengan baik. Korban sudah aman.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/panic/{{panic_id}}/resolve",
+              "host": ["{{base_url}}"],
+              "path": ["panic", "{{panic_id}}", "resolve"]
+            },
+            "description": "Selesaikan panic report yang sudah di-handle"
+          }
+        }
+      ]
+    },
+    {
+      "name": "👑 ADMIN ENDPOINTS",
+      "description": "Endpoints khusus untuk admin",
+      "item": [
+        {
+          "name": "🔧 User Management",
+          "item": [
+            {
+              "name": "Register Admin",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"name\": \"Admin User\",\n    \"email\": \"admin@example.com\",\n    \"password\": \"password123\",\n    \"password_confirmation\": \"password123\",\n    \"no_telp\": \"081234567891\",\n    \"alamat\": \"Jl. Admin No. 123\",\n    \"nik\": \"1234567890123457\",\n    \"tanggal_lahir\": \"1990-01-01\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/admin/register-admin",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "register-admin"]
+                },
+                "description": "Daftarkan admin baru (hanya admin)"
+              }
+            },
+            {
+              "name": "Register Relawan",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "if (pm.response.code === 201) {",
+                      "    const response = pm.response.json();",
+                      "    console.log('Relawan registered:', response.user.name);",
+                      "}"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"name\": \"Relawan User\",\n    \"email\": \"relawan@example.com\",\n    \"password\": \"password123\",\n    \"password_confirmation\": \"password123\",\n    \"no_telp\": \"081234567892\",\n    \"alamat\": \"Jl. Relawan No. 123\",\n    \"nik\": \"1234567890123458\",\n    \"tanggal_lahir\": \"1992-01-01\",\n    \"nim\": \"24060122130001\",\n    \"jurusan\": \"Teknik Informatika\",\n    \"angkatan\": \"2022\",\n    \"status_relawan\": \"active\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/admin/register-relawan",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "register-relawan"]
+                },
+                "description": "Daftarkan relawan baru (hanya admin)"
+              }
+            },
+            {
+              "name": "Get All Users",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/admin/users",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "users"]
+                },
+                "description": "Lihat semua user biasa"
+              }
+            },
+            {
+              "name": "Get All Relawan",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/admin/relawan",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "relawan"]
+                },
+                "description": "Lihat semua relawan"
+              }
+            },
+            {
+              "name": "Get All Users (Mixed)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/admin/all-users",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "all-users"]
+                },
+                "description": "Lihat semua user (admin, relawan, user)"
+              }
+            },
+            {
+              "name": "Get User by ID",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/users/{{user_id}}",
+                  "host": ["{{base_url}}"],
+                  "path": ["users", "{{user_id}}"]
+                },
+                "description": "Lihat detail user berdasarkan ID"
+              }
+            },
+            {
+              "name": "Delete User",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/admin/users/{{user_id}}",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "users", "{{user_id}}"]
+                },
+                "description": "Hapus user/relawan (hanya admin)"
+              }
+            }
+          ]
+        },
+        {
+          "name": "🕒 Shift Management",
+          "item": [
+            {
+              "name": "Get All Shifts",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/admin/shifts?date=2025-06-15",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "shifts"],
+                  "query": [
+                    {
+                      "key": "date",
+                      "value": "2025-06-15",
+                      "description": "Filter berdasarkan tanggal (opsional)"
+                    }
+                  ]
+                },
+                "description": "Lihat semua shift relawan"
+              }
+            },
+            {
+              "name": "Get Week Shifts",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/admin/shifts/week?start_date=2025-06-01&end_date=2025-06-07",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "shifts", "week"],
+                  "query": [
+                    {
+                      "key": "start_date",
+                      "value": "2025-06-01"
+                    },
+                    {
+                      "key": "end_date",
+                      "value": "2025-06-07"
+                    }
+                  ]
+                },
+                "description": "Lihat shift dalam rentang tanggal"
+              }
+            },
+            {
+              "name": "Create Manual Shift",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"shift_date\": \"2025-06-15\",\n    \"relawan_ids\": [2, 3, 4, 5]\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/admin/shifts",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "shifts"]
+                },
+                "description": "Buat shift manual untuk tanggal tertentu"
+              }
+            },
+            {
+              "name": "Auto Assign Shifts",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"start_date\": \"2025-06-01\",\n    \"end_date\": \"2025-06-07\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/admin/shifts/auto-assign",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "shifts", "auto-assign"]
+                },
+                "description": "Auto assign shift berdasarkan pattern"
+              }
+            },
+            {
+              "name": "Delete Shifts by Date",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/admin/shifts/2025-06-15",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "shifts", "2025-06-15"]
+                },
+                "description": "Hapus semua shift pada tanggal tertentu"
+              }
+            },
+            {
+              "name": "Get Relawans for Shifts",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/admin/relawans",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "relawans"]
+                },
+                "description": "Dapatkan daftar relawan untuk assign shift"
+              }
+            }
+          ]
+        },
+        {
+          "name": "📋 Shift Patterns",
+          "item": [
+            {
+              "name": "Get All Shift Patterns",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/admin/shift-patterns",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "shift-patterns"]
+                },
+                "description": "Lihat semua pattern shift"
+              }
+            },
+            {
+              "name": "Create Shift Pattern",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "if (pm.response.code === 201) {",
+                      "    const response = pm.response.json();",
+                      "    pm.collectionVariables.set('pattern_id', response.pattern.id);",
+                      "    console.log('Pattern created! ID:', response.pattern.id);",
+                      "}"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"relawan_id\": 2,\n    \"day_of_week\": 1,\n    \"is_active\": true\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/admin/shift-patterns",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "shift-patterns"]
+                },
+                "description": "Buat pattern shift baru (0=Minggu, 1=Senin, dst)"
+              }
+            },
+            {
+              "name": "Get Relawan Shift Patterns",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/admin/shift-patterns/relawan?relawan_id=2",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "shift-patterns", "relawan"],
+                  "query": [
+                    {
+                      "key": "relawan_id",
+                      "value": "2"
+                    }
+                  ]
+                },
+                "description": "Lihat pattern shift untuk relawan tertentu"
+              }
+            },
+            {
+              "name": "Copy Shift Pattern",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"from_relawan_id\": 2,\n    \"to_relawan_id\": 3\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/admin/shift-patterns/copy",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "shift-patterns", "copy"]
+                },
+                "description": "Copy pattern dari relawan lain"
+              }
+            },
+            {
+              "name": "Generate Shifts from Patterns",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"start_date\": \"2025-06-01\",\n    \"end_date\": \"2025-06-30\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/admin/shift-patterns/generate-shifts",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "shift-patterns", "generate-shifts"]
+                },
+                "description": "Generate shift berdasarkan pattern yang ada"
+              }
+            },
+            {
+              "name": "Delete Shift Pattern by Day",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/admin/shift-patterns/day/1?relawan_id=2",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "shift-patterns", "day", "1"],
+                  "query": [
+                    {
+                      "key": "relawan_id",
+                      "value": "2"
+                    }
+                  ]
+                },
+                "description": "Hapus pattern untuk hari tertentu"
+              }
+            },
+            {
+              "name": "Delete Shift Pattern by ID",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/admin/shift-patterns/{{pattern_id}}",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "shift-patterns", "{{pattern_id}}"]
+                },
+                "description": "Hapus pattern berdasarkan ID"
+              }
+            }
+          ]
+        },
+        {
+          "name": "🚨 Panic Management",
+          "item": [
+            {
+              "name": "Get All Panic Reports",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/panic/admin?date=2025-06-02&status=pending",
+                  "host": ["{{base_url}}"],
+                  "path": ["panic", "admin"],
+                  "query": [
+                    {
+                      "key": "date",
+                      "value": "2025-06-02",
+                      "description": "Filter berdasarkan tanggal (opsional)"
+                    },
+                    {
+                      "key": "status",
+                      "value": "pending",
+                      "description": "Filter berdasarkan status (opsional)"
+                    }
+                  ]
+                },
+                "description": "Lihat semua panic reports (admin)"
+              }
+            },
+            {
+              "name": "Get Today Relawan on Duty",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/panic/relawan-today",
+                  "host": ["{{base_url}}"],
+                  "path": ["panic", "relawan-today"]
+                },
+                "description": "Lihat relawan yang bertugas hari ini"
+              }
+            }
+          ]
+        },
+        {
+          "name": "📊 Dashboard",
+          "item": [
+            {
+              "name": "Admin Dashboard",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/admin/dashboard",
+                  "host": ["{{base_url}}"],
+                  "path": ["admin", "dashboard"]
+                },
+                "description": "Dashboard statistics untuk admin"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "🔧 SHARED ENDPOINTS",
+      "description": "Endpoints yang bisa diakses oleh semua user yang login",
+      "item": [
+        {
+          "name": "Get Report by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/reports/{{report_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["reports", "{{report_id}}"]
+            },
+            "description": "Lihat detail laporan berdasarkan ID"
+          }
+        },
+        {
+          "name": "Get Today Panic Reports (General)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/panic-today",
+              "host": ["{{base_url}}"],
+              "path": ["panic-today"]
+            },
+            "description": "Lihat panic reports hari ini (sesuai role)"
+          }
+        }
+      ]
+    }
+  ]
+}

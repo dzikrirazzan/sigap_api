@@ -34,41 +34,41 @@ class GenerateShiftsFromPatterns extends Command
     public function handle()
     {
         $this->info('🚀 Starting shift generation from patterns...');
-        
+
         // Parse date parameters
         $startDate = $this->getStartDate();
         $endDate = $this->getEndDate($startDate);
         $overwrite = $this->option('overwrite');
         $dryRun = $this->option('dry-run');
-        
+
         if ($dryRun) {
             $this->warn('🔍 DRY RUN MODE - No actual shifts will be created');
         }
-        
+
         $this->info("📅 Date range: {$startDate->format('Y-m-d')} to {$endDate->format('Y-m-d')}");
         $this->info("📊 Total days: " . $startDate->diffInDays($endDate) + 1);
-        
+
         // Show current patterns
         $this->showPatternSummary();
-        
+
         if (!$this->confirm('Continue with shift generation?')) {
             $this->info('❌ Operation cancelled.');
             return 0;
         }
-        
+
         // Generate shifts
         $results = $this->generateShifts($startDate, $endDate, $overwrite, $dryRun);
-        
+
         // Show results
         $this->displayResults($results);
-        
+
         return 0;
     }
-    
+
     private function getStartDate()
     {
         $startOption = $this->option('start');
-        
+
         if ($startOption) {
             try {
                 return Carbon::parse($startOption);
@@ -77,14 +77,14 @@ class GenerateShiftsFromPatterns extends Command
                 exit(1);
             }
         }
-        
+
         return Carbon::today();
     }
-    
+
     private function getEndDate($startDate)
     {
         $endOption = $this->option('end');
-        
+
         if ($endOption) {
             try {
                 $endDate = Carbon::parse($endOption);
@@ -98,48 +98,48 @@ class GenerateShiftsFromPatterns extends Command
                 exit(1);
             }
         }
-        
+
         $days = (int) $this->option('days');
         return $startDate->copy()->addDays($days - 1);
     }
-    
+
     private function showPatternSummary()
     {
         $this->info("\n📋 Current Weekly Patterns:");
         $patterns = RelawanShiftPattern::with('relawan')->get()->groupBy('day_of_week');
-        
+
         $headers = ['Day', 'Relawan Count', 'Relawan Names'];
         $rows = [];
-        
+
         foreach (RelawanShiftPattern::DAYS as $dayKey => $dayName) {
             $dayPatterns = $patterns->get($dayKey, collect());
             $relawanNames = $dayPatterns->pluck('relawan.name')->join(', ');
-            
+
             $rows[] = [
                 $dayName,
                 $dayPatterns->count(),
                 $relawanNames ?: '-'
             ];
         }
-        
+
         $this->table($headers, $rows);
     }
-    
+
     private function generateShifts($startDate, $endDate, $overwrite, $dryRun)
     {
         $results = [];
         $current = $startDate->copy();
-        
+
         $progressBar = $this->output->createProgressBar($startDate->diffInDays($endDate) + 1);
         $progressBar->start();
-        
+
         while ($current <= $endDate) {
             $dayOfWeek = strtolower($current->format('l'));
             $dateString = $current->toDateString();
-            
+
             // Check existing shifts
             $existingShifts = RelawanShift::where('shift_date', $dateString)->count();
-            
+
             if ($existingShifts > 0 && !$overwrite) {
                 $results[] = [
                     'date' => $dateString,
@@ -152,13 +152,13 @@ class GenerateShiftsFromPatterns extends Command
                 $progressBar->advance();
                 continue;
             }
-            
+
             // Get patterns for this day
             $patterns = RelawanShiftPattern::where('day_of_week', $dayOfWeek)
                 ->where('is_active', true)
                 ->with('relawan')
                 ->get();
-            
+
             if ($patterns->isEmpty()) {
                 $results[] = [
                     'date' => $dateString,
@@ -171,13 +171,13 @@ class GenerateShiftsFromPatterns extends Command
                 $progressBar->advance();
                 continue;
             }
-            
+
             if (!$dryRun) {
                 // Delete existing shifts if overwrite
                 if ($overwrite && $existingShifts > 0) {
                     RelawanShift::where('shift_date', $dateString)->delete();
                 }
-                
+
                 // Create new shifts
                 foreach ($patterns as $pattern) {
                     RelawanShift::create([
@@ -186,7 +186,7 @@ class GenerateShiftsFromPatterns extends Command
                     ]);
                 }
             }
-            
+
             $results[] = [
                 'date' => $dateString,
                 'day' => RelawanShiftPattern::DAYS[$dayOfWeek],
@@ -195,28 +195,28 @@ class GenerateShiftsFromPatterns extends Command
                 'assigned_count' => $patterns->count(),
                 'relawan' => $patterns->pluck('relawan.name')->toArray()
             ];
-            
+
             $current->addDay();
             $progressBar->advance();
         }
-        
+
         $progressBar->finish();
         $this->line('');
-        
+
         return $results;
     }
-    
+
     private function displayResults($results)
     {
         $successful = collect($results)->where('status', 'success');
         $skipped = collect($results)->where('status', 'skipped');
-        
+
         $this->info("\n✅ Generation completed!");
         $this->info("📊 Summary:");
         $this->info("   • Successful: {$successful->count()}");
         $this->info("   • Skipped: {$skipped->count()}");
         $this->info("   • Total Relawan Assigned: {$successful->sum('assigned_count')}");
-        
+
         if ($successful->isNotEmpty()) {
             $this->info("\n📅 Successfully Generated Shifts:");
             $headers = ['Date', 'Day', 'Relawan Count', 'Relawan Names'];
@@ -228,10 +228,10 @@ class GenerateShiftsFromPatterns extends Command
                     implode(', ', $result['relawan'] ?? [])
                 ];
             })->toArray();
-            
+
             $this->table($headers, $rows);
         }
-        
+
         if ($skipped->isNotEmpty()) {
             $this->warn("\n⚠️  Skipped Days:");
             $headers = ['Date', 'Day', 'Reason'];
@@ -242,7 +242,7 @@ class GenerateShiftsFromPatterns extends Command
                     $result['message']
                 ];
             })->toArray();
-            
+
             $this->table($headers, $rows);
         }
     }
