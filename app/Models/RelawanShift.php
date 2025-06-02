@@ -3,15 +3,18 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 
-class RelawanShift extends Model
+class RelawanShift extends BaseModel
 {
     use HasFactory;
 
     protected $fillable = [
         'relawan_id',
         'shift_date',
+    ];
+
+    protected $casts = [
+        'shift_date' => 'date',
     ];
 
     public function relawan()

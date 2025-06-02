@@ -19,11 +19,18 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Force timezone ke Jakarta
+        // Force timezone ke Jakarta untuk semua PHP operations
         date_default_timezone_set('Asia/Jakarta');
         
-        // Set Carbon timezone
+        // Set Carbon timezone globally
         \Carbon\Carbon::setLocale('id');
-        \Carbon\Carbon::now()->setTimezone('Asia/Jakarta');
+        
+        // Set default timezone untuk semua Carbon instances
+        \Carbon\Carbon::setTestNow(null);
+        
+        // Force database timezone jika diperlukan
+        if (config('database.default') === 'mysql') {
+            \DB::statement("SET time_zone = '+07:00'");
+        }
     }
 }
