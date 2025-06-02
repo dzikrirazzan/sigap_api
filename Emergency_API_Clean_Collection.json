@@ -1,8 +1,8 @@
 {
 	"info": {
-		"_postman_id": "emergency-api-clean",
-		"name": "🚨 Emergency API - Clean & Organized",
-		"description": "Complete API collection organized by user roles for Emergency Response System",
+		"_postman_id": "emergency-api-final",
+		"name": "🚨 Emergency API - Complete & Organized",
+		"description": "**PRODUCTION READY** - Emergency Response API\n\n**Live API:** https://sigap-api-5hk6r.ondigitalocean.app/api\n\n## 🎯 API by User Role:\n\n### 🔓 Public\n- User Registration & Login\n- Token Management\n\n### 👤 Regular Users\n- Profile Management\n- ⚡ **PANIC BUTTON** (Ultra-fast emergency)\n- Photo Reports\n\n### 👨‍🚒 Relawan (Rescue Workers)\n- Handle Emergencies\n- Resolve Cases\n- Check Personal Shifts\n\n### 👑 Admin\n- User Management\n- Emergency Oversight\n- Daily Shift Assignment\n\n**Timezone:** All timestamps in Jakarta time (+07:00)",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"auth": {
