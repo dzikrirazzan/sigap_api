@@ -13,6 +13,7 @@ class PanicReport extends BaseModel
         'latitude',
         'longitude',
         'location_description',
+        'emergency_type',
         'status',
         'handled_by',
         'handled_at',

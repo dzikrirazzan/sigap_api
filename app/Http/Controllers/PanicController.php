@@ -10,20 +10,18 @@ use Carbon\Carbon;
 
 class PanicController extends Controller
 {
-    // User tekan panic button
+    // User tekan panic button - optimized for speed with minimal required data
     public function store(Request $request)
     {
         $request->validate([
             'latitude' => 'required|numeric',
             'longitude' => 'required|numeric',
-            'location_description' => 'nullable|string',
         ]);
 
         $panic = PanicReport::create([
             'user_id' => auth()->id(),
             'latitude' => $request->latitude,
             'longitude' => $request->longitude,
-            'location_description' => $request->location_description,
             'status' => PanicReport::STATUS_PENDING,
         ]);
 
@@ -33,7 +31,8 @@ class PanicController extends Controller
         return response()->json([
             'success' => true,
             'panic' => $panic,
-            'message' => 'Panic report created successfully'
+            'message' => 'Emergency alert sent successfully. Help is on the way!',
+            'required_fields_only' => 'Only latitude and longitude are required for fastest response'
         ]);
     }
 
