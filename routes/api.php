@@ -8,11 +8,15 @@ use App\Http\Controllers\PanicController;
 use App\Http\Controllers\RelawanShiftController;
 use App\Http\Controllers\AdminShiftController;
 use App\Http\Controllers\RelawanShiftPatternController;
+use App\Http\Controllers\TimezoneTestController;
 
 // Route publik
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login'])->name('api.login');
 Route::post('/refresh', [AuthController::class, 'refreshToken']);
+
+// Test timezone endpoint (public)
+Route::get('/test-timezone', [TimezoneTestController::class, 'testTimezone']);
 
 // Route terproteksi (untuk semua user terautentikasi)
 Route::middleware('auth:sanctum')->group(function () {
@@ -102,7 +106,4 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('auth:sanctum')->post('/panic', [PanicController::class, 'store']);
     Route::middleware('auth:sanctum')->get('/panic-today', [PanicController::class, 'today']); // Admin dan Relawan bisa akses
     Route::middleware(['auth:sanctum', 'relawan'])->post('/panic/{panicId}/handle', [PanicController::class, 'handle']);
-    Route::middleware(['auth:sanctum', 'relawan'])->post('/panic/{panicId}/resolve', [PanicController::class, 'resolve']);
-    Route::middleware(['auth:sanctum', 'admin'])->get('/panic/admin', [PanicController::class, 'adminIndex']);
-    Route::middleware(['auth:sanctum', 'admin'])->get('/panic/relawan-today', [PanicController::class, 'getTodayRelawan']);
 });
