@@ -11,6 +11,14 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
+    /**
+     * Override untuk memastikan timestamp menggunakan Jakarta timezone
+     */
+    protected function serializeDate(\DateTimeInterface $date)
+    {
+        return $date->setTimezone(new \DateTimeZone('Asia/Jakarta'))->format('Y-m-d\TH:i:s.uP');
+    }
+
     const ROLE_USER = 'user';
     const ROLE_RELAWAN = 'relawan';
     const ROLE_ADMIN = 'admin';

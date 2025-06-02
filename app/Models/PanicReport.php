@@ -3,9 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 
-class PanicReport extends Model
+class PanicReport extends BaseModel
 {
     use HasFactory;
 
@@ -22,6 +21,12 @@ class PanicReport extends Model
     protected $casts = [
         'handled_at' => 'datetime',
     ];
+
+    // Override untuk memastikan timestamp menggunakan Jakarta timezone
+    protected function serializeDate(\DateTimeInterface $date)
+    {
+        return $date->setTimezone(new \DateTimeZone('Asia/Jakarta'))->format('Y-m-d\TH:i:s.u\Z');
+    }
 
     // Status constants
     const STATUS_PENDING = 'pending';
@@ -52,5 +57,16 @@ class PanicReport extends Model
     public function getLocationUrlAttribute()
     {
         return "https://maps.google.com/maps?q={$this->latitude},{$this->longitude}";
+    }
+
+    // Override untuk memastikan timezone Jakarta
+    public function getCreatedAtAttribute($value)
+    {
+        return $this->asDateTime($value)->setTimezone('Asia/Jakarta');
+    }
+
+    public function getUpdatedAtAttribute($value)
+    {
+        return $this->asDateTime($value)->setTimezone('Asia/Jakarta');
     }
 }
