@@ -244,4 +244,133 @@ class RelawanShiftController extends Controller
             'note' => 'Run generate-from-patterns to recreate shifts from weekly patterns'
         ]);
     }
+
+    // ✅ Admin replaces specific relawan on specific day with another relawan
+    public function replaceRelawanOnDay(Request $request)
+    {
+        $request->validate([
+            'day_of_week' => 'required|in:monday,tuesday,wednesday,thursday,friday,saturday,sunday',
+            'old_relawan_id' => 'required|exists:users,id',
+            'new_relawan_id' => 'required|exists:users,id'
+        ]);
+
+        $dayOfWeek = $request->day_of_week;
+        $oldRelawanId = $request->old_relawan_id;
+        $newRelawanId = $request->new_relawan_id;
+
+        // Validate both users are relawan
+        $oldRelawan = User::where('id', $oldRelawanId)
+            ->where('role', User::ROLE_RELAWAN)
+            ->first();
+
+        $newRelawan = User::where('id', $newRelawanId)
+            ->where('role', User::ROLE_RELAWAN)
+            ->first();
+
+        if (!$oldRelawan || !$newRelawan) {
+            return response()->json(['message' => 'Both users must be relawan'], 400);
+        }
+
+        // Check if old relawan exists in pattern
+        $oldPattern = RelawanShiftPattern::where('day_of_week', $dayOfWeek)
+            ->where('relawan_id', $oldRelawanId)
+            ->first();
+
+        if (!$oldPattern) {
+            return response()->json([
+                'message' => "{$oldRelawan->name} is not assigned to {$dayOfWeek}"
+            ], 400);
+        }
+
+        // Check if new relawan already exists in pattern
+        $existingNewPattern = RelawanShiftPattern::where('day_of_week', $dayOfWeek)
+            ->where('relawan_id', $newRelawanId)
+            ->first();
+
+        if ($existingNewPattern) {
+            return response()->json([
+                'message' => "{$newRelawan->name} is already assigned to {$dayOfWeek}"
+            ], 400);
+        }
+
+        // Replace: Delete old and create new
+        $oldPattern->delete();
+        
+        RelawanShiftPattern::create([
+            'day_of_week' => $dayOfWeek,
+            'relawan_id' => $newRelawanId,
+            'is_active' => true
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => "Replaced {$oldRelawan->name} with {$newRelawan->name} on {$dayOfWeek}",
+            'day_of_week' => $dayOfWeek,
+            'old_relawan' => $oldRelawan->name,
+            'new_relawan' => $newRelawan->name
+        ]);
+    }
+
+    // ✅ Admin updates specific relawan assignment on specific day
+    public function updateRelawanOnDay(Request $request)
+    {
+        $request->validate([
+            'day_of_week' => 'required|in:monday,tuesday,wednesday,thursday,friday,saturday,sunday',
+            'old_relawan_id' => 'required|exists:users,id',
+            'new_relawan_id' => 'required|exists:users,id'
+        ]);
+
+        $dayOfWeek = $request->day_of_week;
+        $oldRelawanId = $request->old_relawan_id;
+        $newRelawanId = $request->new_relawan_id;
+
+        // Validate both users are relawan
+        $oldRelawan = User::where('id', $oldRelawanId)
+            ->where('role', User::ROLE_RELAWAN)
+            ->first();
+
+        $newRelawan = User::where('id', $newRelawanId)
+            ->where('role', User::ROLE_RELAWAN)
+            ->first();
+
+        if (!$oldRelawan || !$newRelawan) {
+            return response()->json(['message' => 'Both users must be relawan'], 400);
+        }
+
+        // Find the pattern to update
+        $pattern = RelawanShiftPattern::where('day_of_week', $dayOfWeek)
+            ->where('relawan_id', $oldRelawanId)
+            ->first();
+
+        if (!$pattern) {
+            return response()->json([
+                'message' => "{$oldRelawan->name} is not assigned to {$dayOfWeek}"
+            ], 400);
+        }
+
+        // Check if new relawan already exists in pattern
+        $existingNewPattern = RelawanShiftPattern::where('day_of_week', $dayOfWeek)
+            ->where('relawan_id', $newRelawanId)
+            ->first();
+
+        if ($existingNewPattern) {
+            return response()->json([
+                'message' => "{$newRelawan->name} is already assigned to {$dayOfWeek}"
+            ], 400);
+        }
+
+        // Update the pattern
+        $pattern->update([
+            'relawan_id' => $newRelawanId
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => "Updated assignment on {$dayOfWeek}: {$oldRelawan->name} → {$newRelawan->name}",
+            'day_of_week' => $dayOfWeek,
+            'old_relawan' => $oldRelawan->name,
+            'new_relawan' => $newRelawan->name,
+            'pattern_id' => $pattern->id
+        ]);
+    }
 }

@@ -1,0 +1,744 @@
+{
+  "info": {
+    "name": "Emergency API Collection - Updated",
+    "description": "Complete API collection for Emergency API project with authentication, reports, panic button, shift management, and admin functionalities",
+    "version": "2.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{auth_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000/api",
+      "type": "string"
+    },
+    {
+      "key": "auth_token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "🔐 Authentication",
+      "item": [
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"John Doe\",\n    \"email\": \"john@example.com\",\n    \"password\": \"password123\",\n    \"password_confirmation\": \"password123\",\n    \"no_telp\": \"081234567890\",\n    \"nim\": \"21120001\",\n    \"jurusan\": \"Teknik Informatika\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/register",
+              "host": ["{{base_url}}"],
+              "path": ["register"]
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": ["var jsonData = pm.response.json();", "if (jsonData.access_token) {", "    pm.collectionVariables.set('auth_token', jsonData.access_token);", "}"]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"admin@example.com\",\n    \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/login",
+              "host": ["{{base_url}}"],
+              "path": ["login"]
+            }
+          }
+        },
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/profile",
+              "host": ["{{base_url}}"],
+              "path": ["profile"]
+            }
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/refresh",
+              "host": ["{{base_url}}"],
+              "path": ["refresh"]
+            }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/logout",
+              "host": ["{{base_url}}"],
+              "path": ["logout"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "👤 User Management",
+      "item": [
+        {
+          "name": "Get User by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/users/1",
+              "host": ["{{base_url}}"],
+              "path": ["users", "1"]
+            }
+          }
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"John Doe Updated\",\n    \"email\": \"john.updated@example.com\",\n    \"no_telp\": \"081234567891\",\n    \"nim\": \"21120001\",\n    \"jurusan\": \"Teknik Informatika\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/users/1",
+              "host": ["{{base_url}}"],
+              "path": ["users", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📊 Reports Management",
+      "item": [
+        {
+          "name": "Upload Photo",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "foto",
+                  "type": "file",
+                  "src": ""
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/upload-photo",
+              "host": ["{{base_url}}"],
+              "path": ["upload-photo"]
+            }
+          }
+        },
+        {
+          "name": "Get All Reports",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/reports",
+              "host": ["{{base_url}}"],
+              "path": ["reports"]
+            }
+          }
+        },
+        {
+          "name": "Create Report",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"problem_type\": \"kerusakan_fasilitas\",\n    \"description\": \"Lampu koridor lantai 2 mati\",\n    \"location\": \"Gedung A, Lantai 2, Koridor Timur\",\n    \"foto_path\": \"uploads/reports/sample.jpg\",\n    \"priority\": \"medium\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/reports",
+              "host": ["{{base_url}}"],
+              "path": ["reports"]
+            }
+          }
+        },
+        {
+          "name": "Get Report by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/reports/1",
+              "host": ["{{base_url}}"],
+              "path": ["reports", "1"]
+            }
+          }
+        },
+        {
+          "name": "Update Report",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"problem_type\": \"kerusakan_fasilitas\",\n    \"description\": \"Lampu koridor lantai 2 sudah diperbaiki\",\n    \"location\": \"Gedung A, Lantai 2, Koridor Timur\",\n    \"priority\": \"low\",\n    \"status\": \"resolved\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/reports/1",
+              "host": ["{{base_url}}"],
+              "path": ["reports", "1"]
+            }
+          }
+        },
+        {
+          "name": "Delete Report",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{base_url}}/reports/1",
+              "host": ["{{base_url}}"],
+              "path": ["reports", "1"]
+            }
+          }
+        },
+        {
+          "name": "Get Problem Types",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/problem-types",
+              "host": ["{{base_url}}"],
+              "path": ["problem-types"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🚨 Panic Button",
+      "item": [
+        {
+          "name": "Create Panic Report",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"location\": \"Gedung A, Lantai 3, Ruang 301\",\n    \"description\": \"Kebakaran kecil di laboratorium\",\n    \"panic_type\": \"fire\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/panic",
+              "host": ["{{base_url}}"],
+              "path": ["panic"]
+            }
+          }
+        },
+        {
+          "name": "Get Today Panic Reports",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/panic/today",
+              "host": ["{{base_url}}"],
+              "path": ["panic", "today"]
+            }
+          }
+        },
+        {
+          "name": "Update Panic Status",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"status\": \"resolved\",\n    \"response_notes\": \"Situasi telah ditangani, kebakaran berhasil dipadamkan\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/panic/1/status",
+              "host": ["{{base_url}}"],
+              "path": ["panic", "1", "status"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "👥 Relawan Features",
+      "item": [
+        {
+          "name": "Get My Shifts",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/relawan/my-shifts?start_date=2024-01-01&end_date=2024-01-31",
+              "host": ["{{base_url}}"],
+              "path": ["relawan", "my-shifts"],
+              "query": [
+                {
+                  "key": "start_date",
+                  "value": "2024-01-01"
+                },
+                {
+                  "key": "end_date",
+                  "value": "2024-01-31"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔧 Admin - User Management",
+      "item": [
+        {
+          "name": "Get All Users",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/admin/users",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "users"]
+            }
+          }
+        },
+        {
+          "name": "Get All Relawan",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/admin/relawan",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "relawan"]
+            }
+          }
+        },
+        {
+          "name": "Register Relawan",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Alice Relawan\",\n    \"email\": \"alice@relawan.com\",\n    \"password\": \"password123\",\n    \"password_confirmation\": \"password123\",\n    \"no_telp\": \"081234567892\",\n    \"nim\": \"21120002\",\n    \"jurusan\": \"Teknik Elektro\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/register-relawan",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "register-relawan"]
+            }
+          }
+        },
+        {
+          "name": "Register Admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Bob Admin\",\n    \"email\": \"bob@admin.com\",\n    \"password\": \"password123\",\n    \"password_confirmation\": \"password123\",\n    \"no_telp\": \"081234567893\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/register-admin",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "register-admin"]
+            }
+          }
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{base_url}}/admin/users/1",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "users", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🚨 Admin - Panic Management",
+      "item": [
+        {
+          "name": "Get All Panic Reports",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/admin/panic?status=pending&page=1",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "panic"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "pending"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Panic Report",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{base_url}}/admin/panic/1",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "panic", "1"]
+            }
+          }
+        },
+        {
+          "name": "Get Relawan On Duty Today",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/admin/relawan-on-duty",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "relawan-on-duty"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📅 Admin - Shift Management",
+      "item": [
+        {
+          "name": "Get Shifts Overview",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/admin/shifts",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "shifts"]
+            }
+          }
+        },
+        {
+          "name": "Get Weekly Patterns",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/admin/shifts/weekly-patterns",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "shifts", "weekly-patterns"]
+            }
+          }
+        },
+        {
+          "name": "Generate Shifts from Patterns",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"days\": 7\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/shifts/generate-from-patterns",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "shifts", "generate-from-patterns"]
+            }
+          }
+        },
+        {
+          "name": "Delete Shifts by Date",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "{{base_url}}/admin/shifts/date/2024-01-15",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "shifts", "date", "2024-01-15"]
+            }
+          }
+        },
+        {
+          "name": "Get Available Relawan",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/admin/relawans",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "relawans"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔄 Admin - Weekly Pattern Management",
+      "item": [
+        {
+          "name": "Set Day Pattern (Replace All)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"day_of_week\": \"monday\",\n    \"relawan_ids\": [1, 2, 3]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/shifts/set-day-pattern",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "shifts", "set-day-pattern"]
+            }
+          }
+        },
+        {
+          "name": "Add Relawan to Day",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"day_of_week\": \"tuesday\",\n    \"relawan_id\": 4\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/shifts/add-relawan-to-day",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "shifts", "add-relawan-to-day"]
+            }
+          }
+        },
+        {
+          "name": "🔄 Replace Relawan on Day (NEW)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"day_of_week\": \"wednesday\",\n    \"old_relawan_id\": 2,\n    \"new_relawan_id\": 5\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/shifts/replace-relawan-on-day",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "shifts", "replace-relawan-on-day"]
+            },
+            "description": "⭐ BARU: Mengganti relawan tertentu di hari tertentu dengan relawan lain. Menggunakan PUT method sesuai kebutuhan update."
+          }
+        },
+        {
+          "name": "🔄 Update Relawan on Day (NEW)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"day_of_week\": \"thursday\",\n    \"old_relawan_id\": 3,\n    \"new_relawan_id\": 6\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/shifts/update-relawan-on-day",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "shifts", "update-relawan-on-day"]
+            },
+            "description": "⭐ BARU: Update assignment relawan di hari tertentu. Menggunakan PUT method untuk update data."
+          }
+        },
+        {
+          "name": "Remove Relawan from Day",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"day_of_week\": \"friday\",\n    \"relawan_id\": 4\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/shifts/remove-relawan-from-day",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "shifts", "remove-relawan-from-day"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "⚙️ Admin - Shift Automation",
+      "item": [
+        {
+          "name": "Get Automation Status",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/admin/automation/status",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "automation", "status"]
+            }
+          }
+        },
+        {
+          "name": "Toggle Automation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"enabled\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/automation/toggle",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "automation", "toggle"]
+            }
+          }
+        },
+        {
+          "name": "Force Generation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"days\": 14,\n    \"reason\": \"Manual generation for holiday period\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/admin/automation/force-generation",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "automation", "force-generation"]
+            }
+          }
+        },
+        {
+          "name": "Get Automation Logs",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/admin/automation/logs",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "automation", "logs"]
+            }
+          }
+        },
+        {
+          "name": "Test Automation",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/admin/automation/test",
+              "host": ["{{base_url}}"],
+              "path": ["admin", "automation", "test"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

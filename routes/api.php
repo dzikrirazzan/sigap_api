@@ -74,6 +74,8 @@ Route::middleware('auth:sanctum')->group(function () {
         // ✅ Weekly Pattern Management (Monday-Sunday assignments)
         Route::post('/shifts/set-day-pattern', [RelawanShiftController::class, 'setDayPattern']);
         Route::post('/shifts/add-relawan-to-day', [RelawanShiftController::class, 'addRelawanToDay']);
+        Route::put('/shifts/replace-relawan-on-day', [RelawanShiftController::class, 'replaceRelawanOnDay']);
+        Route::put('/shifts/update-relawan-on-day', [RelawanShiftController::class, 'updateRelawanOnDay']);
         Route::delete('/shifts/remove-relawan-from-day', [RelawanShiftController::class, 'removeRelawanFromDay']);
 
         // Shift Automation Management
