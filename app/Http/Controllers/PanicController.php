@@ -335,6 +335,7 @@ class PanicController extends Controller
     }
 
     // Relawan cek shift mereka sendiri - berdasarkan pattern dan actual shifts
+    // Improved version: Shows weekly schedule with better UX
     public function getMyShifts(Request $request)
     {
         $relawanId = auth()->id();
@@ -345,23 +346,83 @@ class PanicController extends Controller
             return response()->json(['message' => 'Access denied. Only relawan can access this endpoint.'], 403);
         }
 
-        // Default ambil shift 1 minggu ke depan dan ke belakang
-        $startDate = $request->get('start_date', Carbon::now()->subDays(7)->toDateString());
-        $endDate = $request->get('end_date', Carbon::now()->addDays(7)->toDateString());
+        // Get week parameter (default: current week)
+        // User can specify week offset: 0 = current week, -1 = last week, 1 = next week
+        $weekOffset = (int) $request->get('week', 0);
+        
+        // Calculate start and end of the target week (Monday to Sunday)
+        $targetWeek = Carbon::now()->addWeeks($weekOffset);
+        $startOfWeek = $targetWeek->copy()->startOfWeek(Carbon::MONDAY);
+        $endOfWeek = $targetWeek->copy()->endOfWeek(Carbon::SUNDAY);
+        
+        $startDate = $startOfWeek->toDateString();
+        $endDate = $endOfWeek->toDateString();
 
-        // Get actual shifts
+        // Get actual shifts for the week
         $actualShifts = RelawanShift::where('relawan_id', $relawanId)
             ->whereBetween('shift_date', [$startDate, $endDate])
-            ->orderBy('shift_date', 'desc')
-            ->get();
+            ->get()
+            ->keyBy('shift_date');
 
-        // Get patterns untuk relawan ini
+        // Get active patterns untuk relawan ini
         $patterns = RelawanShiftPattern::where('relawan_id', $relawanId)
             ->where('is_active', true)
-            ->get();
+            ->get()
+            ->keyBy('day_of_week');
 
+        // Build weekly schedule (Monday to Sunday)
+        $weeklySchedule = [];
         $today = Carbon::now()->toDateString();
-        $isOnDutyToday = $this->isRelawanOnDutyToday($relawanId);
+        $todayDayOfWeek = strtolower(Carbon::now()->format('l'));
+        
+        for ($i = 0; $i < 7; $i++) {
+            $currentDay = $startOfWeek->copy()->addDays($i);
+            $dateString = $currentDay->toDateString();
+            $dayOfWeek = strtolower($currentDay->format('l'));
+            
+            // Check if relawan has shift on this day
+            $hasActualShift = isset($actualShifts[$dateString]);
+            $hasPattern = isset($patterns[$dayOfWeek]);
+            $isScheduled = $hasActualShift || $hasPattern;
+            
+            // Determine shift source
+            $shiftSource = null;
+            $shiftId = null;
+            if ($hasActualShift) {
+                $shiftSource = 'actual_shift';
+                $shiftId = $actualShifts[$dateString]->id;
+            } elseif ($hasPattern) {
+                $shiftSource = 'weekly_pattern';
+                $shiftId = $patterns[$dayOfWeek]->id;
+            }
+            
+            $weeklySchedule[] = [
+                'date' => $dateString,
+                'day_of_week' => $dayOfWeek,
+                'day_name' => $currentDay->locale('id')->isoFormat('dddd'),
+                'date_formatted' => $currentDay->locale('id')->isoFormat('D MMM YYYY'),
+                'is_today' => $dateString === $today,
+                'is_past' => $dateString < $today,
+                'is_future' => $dateString > $today,
+                'is_scheduled' => $isScheduled,
+                'shift_source' => $shiftSource,
+                'shift_id' => $shiftId,
+                'has_actual_shift' => $hasActualShift,
+                'has_pattern' => $hasPattern
+            ];
+        }
+
+        // Calculate summary
+        $scheduledDays = collect($weeklySchedule)->where('is_scheduled', true);
+        $todaySchedule = collect($weeklySchedule)->firstWhere('is_today', true);
+        $isOnDutyToday = $todaySchedule ? $todaySchedule['is_scheduled'] : false;
+        
+        // Get upcoming shifts (next 7 days from today)
+        $upcomingShifts = collect($weeklySchedule)
+            ->where('is_future', true)
+            ->where('is_scheduled', true)
+            ->take(3) // Show next 3 upcoming shifts
+            ->values();
 
         return response()->json([
             'relawan' => [
@@ -369,36 +430,52 @@ class PanicController extends Controller
                 'name' => $user->name,
                 'email' => $user->email
             ],
-            'is_on_duty_today' => $isOnDutyToday,
-            'actual_shifts' => $actualShifts->map(function ($shift) use ($today) {
-                return [
-                    'id' => $shift->id,
-                    'shift_date' => $shift->shift_date,
-                    'is_today' => $shift->shift_date === $today,
-                    'is_past' => $shift->shift_date < $today,
-                    'day_name' => Carbon::parse($shift->shift_date)->locale('id')->isoFormat('dddd'),
-                    'date_formatted' => Carbon::parse($shift->shift_date)->locale('id')->isoFormat('D MMMM YYYY'),
-                    'created_at' => $shift->created_at
-                ];
-            }),
-            'weekly_patterns' => $patterns->map(function ($pattern) {
-                return [
-                    'id' => $pattern->id,
-                    'day_of_week' => $pattern->day_of_week,
-                    'day_name' => RelawanShiftPattern::DAYS[$pattern->day_of_week] ?? ucfirst($pattern->day_of_week),
-                    'is_active' => $pattern->is_active,
-                    'created_at' => $pattern->created_at
-                ];
-            }),
+            'week_info' => [
+                'week_offset' => $weekOffset,
+                'start_date' => $startDate,
+                'end_date' => $endDate,
+                'week_label' => $this->getWeekLabel($weekOffset),
+                'period_formatted' => $startOfWeek->locale('id')->isoFormat('D MMM') . ' - ' . $endOfWeek->locale('id')->isoFormat('D MMM YYYY')
+            ],
+            'today_status' => [
+                'date' => $today,
+                'is_on_duty' => $isOnDutyToday,
+                'day_name' => Carbon::now()->locale('id')->isoFormat('dddd'),
+                'shift_source' => $todaySchedule ? $todaySchedule['shift_source'] : null
+            ],
+            'weekly_schedule' => $weeklySchedule,
+            'upcoming_shifts' => $upcomingShifts,
             'summary' => [
-                'total_actual_shifts' => $actualShifts->count(),
-                'total_weekly_patterns' => $patterns->count(),
-                'period' => [
-                    'start_date' => $startDate,
-                    'end_date' => $endDate
-                ]
+                'total_scheduled_days' => $scheduledDays->count(),
+                'days_with_actual_shifts' => $scheduledDays->where('has_actual_shift', true)->count(),
+                'days_with_patterns_only' => $scheduledDays->where('has_actual_shift', false)->where('has_pattern', true)->count(),
+                'work_days_this_week' => $scheduledDays->count() . '/7 hari'
+            ],
+            'navigation' => [
+                'previous_week' => $weekOffset - 1,
+                'current_week' => 0,
+                'next_week' => $weekOffset + 1
             ]
         ]);
+    }
+
+    /**
+     * Helper method to get week label
+     */
+    private function getWeekLabel($weekOffset)
+    {
+        switch ($weekOffset) {
+            case -1:
+                return 'Minggu Lalu';
+            case 0:
+                return 'Minggu Ini';
+            case 1:
+                return 'Minggu Depan';
+            default:
+                return $weekOffset > 0 
+                    ? $weekOffset . ' minggu ke depan'
+                    : abs($weekOffset) . ' minggu yang lalu';
+        }
     }
 
     /**

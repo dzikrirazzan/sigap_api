@@ -328,24 +328,83 @@
       "name": "👥 Relawan Features",
       "item": [
         {
-          "name": "Get My Shifts",
+          "name": "Get My Shifts - Current Week",
           "request": {
             "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
             "url": {
-              "raw": "{{base_url}}/relawan/my-shifts?start_date=2024-01-01&end_date=2024-01-31",
+              "raw": "{{base_url}}/relawan/my-shifts",
+              "host": ["{{base_url}}"],
+              "path": ["relawan", "my-shifts"]
+            },
+            "description": "Get relawan's schedule for current week. Shows a clear weekly view with today's status and upcoming shifts."
+          }
+        },
+        {
+          "name": "Get My Shifts - Last Week",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/relawan/my-shifts?week=-1",
               "host": ["{{base_url}}"],
               "path": ["relawan", "my-shifts"],
               "query": [
                 {
-                  "key": "start_date",
-                  "value": "2024-01-01"
-                },
-                {
-                  "key": "end_date",
-                  "value": "2024-01-31"
+                  "key": "week",
+                  "value": "-1",
+                  "description": "Week offset: -1 = last week, 0 = current week, 1 = next week"
                 }
               ]
-            }
+            },
+            "description": "Get relawan's schedule for last week using week offset parameter."
+          }
+        },
+        {
+          "name": "Get My Shifts - Next Week",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/relawan/my-shifts?week=1",
+              "host": ["{{base_url}}"],
+              "path": ["relawan", "my-shifts"],
+              "query": [
+                {
+                  "key": "week",
+                  "value": "1",
+                  "description": "Week offset: -1 = last week, 0 = current week, 1 = next week"
+                }
+              ]
+            },
+            "description": "Get relawan's schedule for next week using week offset parameter."
           }
         }
       ]

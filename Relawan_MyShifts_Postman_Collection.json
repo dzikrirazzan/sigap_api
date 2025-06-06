@@ -1,0 +1,438 @@
+{
+  "info": {
+    "name": "Relawan My Shifts - Improved Endpoint",
+    "description": "Postman collection untuk testing endpoint /relawan/my-shifts yang sudah diperbaiki dengan fitur weekly view yang user-friendly",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{auth_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000/api",
+      "type": "string",
+      "description": "Base URL untuk API. Ganti sesuai environment Anda (localhost, staging, production)"
+    },
+    {
+      "key": "auth_token",
+      "value": "",
+      "type": "string",
+      "description": "Token authentication untuk relawan. Dapatkan dari endpoint login."
+    }
+  ],
+  "item": [
+    {
+      "name": "🔐 Authentication",
+      "description": "Endpoints untuk mendapatkan token authentication",
+      "item": [
+        {
+          "name": "Login Relawan",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Auto-save token ke environment variable",
+                  "if (pm.response.code === 200) {",
+                  "    const responseJson = pm.response.json();",
+                  "    if (responseJson.token) {",
+                  "        pm.collectionVariables.set('auth_token', responseJson.token);",
+                  "        console.log('Token saved to collection variable');",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"relawan@example.com\",\n    \"password\": \"password123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/login",
+              "host": ["{{base_url}}"],
+              "path": ["login"]
+            },
+            "description": "Login sebagai relawan untuk mendapatkan authentication token. Token akan otomatis disimpan ke collection variable."
+          }
+        }
+      ]
+    },
+    {
+      "name": "👥 Relawan My Shifts - Improved",
+      "description": "Endpoint yang sudah diperbaiki untuk melihat jadwal shift relawan dengan tampilan weekly yang user-friendly",
+      "item": [
+        {
+          "name": "Get My Shifts - Current Week (Default)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has required fields', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('relawan');",
+                  "    pm.expect(responseJson).to.have.property('week_info');",
+                  "    pm.expect(responseJson).to.have.property('today_status');",
+                  "    pm.expect(responseJson).to.have.property('weekly_schedule');",
+                  "    pm.expect(responseJson).to.have.property('summary');",
+                  "});",
+                  "",
+                  "pm.test('Weekly schedule has 7 days', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.weekly_schedule).to.have.lengthOf(7);",
+                  "});",
+                  "",
+                  "pm.test('Today status is properly formatted', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.today_status).to.have.property('is_on_duty');",
+                  "    pm.expect(responseJson.today_status).to.have.property('day_name');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/relawan/my-shifts",
+              "host": ["{{base_url}}"],
+              "path": ["relawan", "my-shifts"]
+            },
+            "description": "Mendapatkan jadwal shift untuk minggu ini (default). Tidak perlu parameter tambahan. Response berisi:\n- Info relawan\n- Status hari ini\n- Jadwal mingguan (Senin-Minggu)\n- Shift yang akan datang\n- Ringkasan jadwal"
+          }
+        },
+        {
+          "name": "Get My Shifts - Last Week",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Week info shows last week', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.week_info.week_offset).to.equal(-1);",
+                  "    pm.expect(responseJson.week_info.week_label).to.equal('Minggu Lalu');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/relawan/my-shifts?week=-1",
+              "host": ["{{base_url}}"],
+              "path": ["relawan", "my-shifts"],
+              "query": [
+                {
+                  "key": "week",
+                  "value": "-1",
+                  "description": "Week offset: -1 = minggu lalu"
+                }
+              ]
+            },
+            "description": "Mendapatkan jadwal shift untuk minggu lalu menggunakan parameter week=-1. Berguna untuk melihat riwayat jadwal."
+          }
+        },
+        {
+          "name": "Get My Shifts - Next Week",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Week info shows next week', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.week_info.week_offset).to.equal(1);",
+                  "    pm.expect(responseJson.week_info.week_label).to.equal('Minggu Depan');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/relawan/my-shifts?week=1",
+              "host": ["{{base_url}}"],
+              "path": ["relawan", "my-shifts"],
+              "query": [
+                {
+                  "key": "week",
+                  "value": "1",
+                  "description": "Week offset: 1 = minggu depan"
+                }
+              ]
+            },
+            "description": "Mendapatkan jadwal shift untuk minggu depan menggunakan parameter week=1. Berguna untuk planning jadwal ke depan."
+          }
+        },
+        {
+          "name": "Get My Shifts - 2 Weeks Ago",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Week info shows 2 weeks ago', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.week_info.week_offset).to.equal(-2);",
+                  "    pm.expect(responseJson.week_info.week_label).to.include('minggu yang lalu');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/relawan/my-shifts?week=-2",
+              "host": ["{{base_url}}"],
+              "path": ["relawan", "my-shifts"],
+              "query": [
+                {
+                  "key": "week",
+                  "value": "-2",
+                  "description": "Week offset: -2 = 2 minggu yang lalu"
+                }
+              ]
+            },
+            "description": "Contoh penggunaan dengan offset yang lebih jauh: 2 minggu yang lalu. Menunjukkan fleksibilitas parameter week."
+          }
+        },
+        {
+          "name": "Get My Shifts - 3 Weeks Ahead",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Week info shows 3 weeks ahead', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.week_info.week_offset).to.equal(3);",
+                  "    pm.expect(responseJson.week_info.week_label).to.include('minggu ke depan');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/relawan/my-shifts?week=3",
+              "host": ["{{base_url}}"],
+              "path": ["relawan", "my-shifts"],
+              "query": [
+                {
+                  "key": "week",
+                  "value": "3",
+                  "description": "Week offset: 3 = 3 minggu ke depan"
+                }
+              ]
+            },
+            "description": "Contoh penggunaan untuk melihat jadwal jauh ke depan: 3 minggu ke depan. Berguna untuk perencanaan jangka panjang."
+          }
+        }
+      ]
+    },
+    {
+      "name": "🔧 Testing Error Cases",
+      "description": "Test cases untuk memastikan error handling berfungsi dengan baik",
+      "item": [
+        {
+          "name": "Access Without Token (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 401 Unauthorized', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Response contains unauthenticated message', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.message.toLowerCase()).to.include('unauthenticated');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/relawan/my-shifts",
+              "host": ["{{base_url}}"],
+              "path": ["relawan", "my-shifts"]
+            },
+            "description": "Test akses endpoint tanpa token authentication. Harus return 401 Unauthorized."
+          }
+        },
+        {
+          "name": "Access With Invalid Token (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 401 Unauthorized', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer invalid_token_here"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/relawan/my-shifts",
+              "host": ["{{base_url}}"],
+              "path": ["relawan", "my-shifts"]
+            },
+            "description": "Test akses endpoint dengan token yang tidak valid. Harus return 401 Unauthorized."
+          }
+        }
+      ]
+    },
+    {
+      "name": "📋 Sample Response",
+      "description": "Contoh response yang akan didapat dari endpoint",
+      "item": [
+        {
+          "name": "Expected Response Format",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/relawan/my-shifts",
+              "host": ["{{base_url}}"],
+              "path": ["relawan", "my-shifts"]
+            },
+            "description": "Contoh format response yang diharapkan:\n\n```json\n{\n  \"relawan\": {\n    \"id\": 1,\n    \"name\": \"John Doe\",\n    \"email\": \"john@example.com\"\n  },\n  \"week_info\": {\n    \"week_offset\": 0,\n    \"start_date\": \"2024-01-15\",\n    \"end_date\": \"2024-01-21\",\n    \"week_label\": \"Minggu Ini\",\n    \"period_formatted\": \"15 Jan - 21 Jan 2024\"\n  },\n  \"today_status\": {\n    \"date\": \"2024-01-17\",\n    \"is_on_duty\": true,\n    \"day_name\": \"Rabu\",\n    \"shift_source\": \"weekly_pattern\"\n  },\n  \"weekly_schedule\": [\n    {\n      \"date\": \"2024-01-15\",\n      \"day_of_week\": \"monday\",\n      \"day_name\": \"Senin\",\n      \"date_formatted\": \"15 Jan 2024\",\n      \"is_today\": false,\n      \"is_past\": true,\n      \"is_future\": false,\n      \"is_scheduled\": true,\n      \"shift_source\": \"actual_shift\",\n      \"shift_id\": 123,\n      \"has_actual_shift\": true,\n      \"has_pattern\": false\n    }\n    // ... 6 more days\n  ],\n  \"upcoming_shifts\": [\n    {\n      \"date\": \"2024-01-18\",\n      \"day_name\": \"Kamis\",\n      \"is_scheduled\": true,\n      \"shift_source\": \"weekly_pattern\"\n    }\n  ],\n  \"summary\": {\n    \"total_scheduled_days\": 3,\n    \"days_with_actual_shifts\": 1,\n    \"days_with_patterns_only\": 2,\n    \"work_days_this_week\": \"3/7 hari\"\n  },\n  \"navigation\": {\n    \"previous_week\": -1,\n    \"current_week\": 0,\n    \"next_week\": 1\n  }\n}\n```"
+          }
+        }
+      ]
+    }
+  ]
+}
