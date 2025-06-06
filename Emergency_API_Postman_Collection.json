@@ -1,0 +1,1347 @@
+{
+	"info": {
+		"_postman_id": "emergency-api-collection",
+		"name": "Emergency Response API",
+		"description": "Comprehensive Emergency Response API Collection organized by features and user roles\n\n**User Roles:**\n🔴 ADMIN - Full system access\n🔵 RELAWAN - Emergency responders\n🟢 USER - Regular citizens\n👤 ALL ROLES - All authenticated users",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "emergency-api"
+	},
+	"item": [
+		{
+			"name": "🔐 1. Authentication & Profile",
+			"description": "User registration, login, and profile management for all user types",
+			"item": [
+				{
+					"name": "Register New User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"John Doe\",\n    \"email\": \"john@example.com\",\n    \"password\": \"password123\",\n    \"password_confirmation\": \"password123\",\n    \"phone\": \"+628123456789\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/register",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"register"
+							]
+						},
+						"description": "**Access:** 👤 PUBLIC\n**Purpose:** Register new user account for emergency services\n**User Type:** Citizens creating accounts\n\n**Response includes:**\n- User details\n- Authentication token\n- Role assignment"
+					}
+				},
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    if (response.token) {",
+									"        pm.environment.set('auth_token', response.token);",
+									"        console.log('Token saved:', response.token);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"admin@emergency.com\",\n    \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"login"
+							]
+						},
+						"description": "**Access:** 👤 PUBLIC\n**Purpose:** Authenticate users to access emergency services\n**User Type:** All registered users\n\n**Auto-saves token to environment variable for other requests**"
+					}
+				},
+				{
+					"name": "Get Profile",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/profile",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"profile"
+							]
+						},
+						"description": "**Access:** 👤 ALL ROLES\n**Purpose:** Get current user profile information\n**User Type:** Any authenticated user\n\n**Returns:**\n- User details\n- Role information\n- Account status"
+					}
+				},
+				{
+					"name": "Update Profile",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"John Doe Updated\",\n    \"phone\": \"+628123456789\",\n    \"email\": \"john.updated@example.com\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/users/{{user_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"users",
+								"{{user_id}}"
+							]
+						},
+						"description": "**Access:** 👤 ALL ROLES\n**Purpose:** Update user profile information\n**User Type:** Users updating their own profile\n**Restriction:** Users can only update their own profile"
+					}
+				},
+				{
+					"name": "Refresh Token",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/refresh",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"refresh"
+							]
+						},
+						"description": "**Access:** 👤 PUBLIC\n**Purpose:** Refresh authentication token\n**User Type:** All authenticated users\n\n**Use Case:** Maintain session without re-login"
+					}
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/logout",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"logout"
+							]
+						},
+						"description": "**Access:** 👤 ALL ROLES\n**Purpose:** Secure session termination\n**User Type:** Any authenticated user\n\n**Effect:** Invalidates current token"
+					}
+				}
+			]
+		},
+		{
+			"name": "👥 2. Admin - User Management",
+			"description": "Administrative functions for managing users and relawan (ADMIN ONLY)",
+			"item": [
+				{
+					"name": "Get All Users",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/users",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"users"
+							]
+						},
+						"description": "**Access:** 🔴 ADMIN ONLY\n**Purpose:** Get list of all users in system\n**User Type:** System administrators\n\n**Returns:**\n- Complete user list\n- Registration dates\n- Role information\n- Account status"
+					}
+				},
+				{
+					"name": "Get All Relawan",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/relawan",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"relawan"
+							]
+						},
+						"description": "**Access:** 🔴 ADMIN ONLY\n**Purpose:** Get list of all relawan (volunteers)\n**User Type:** Administrators managing emergency response team\n\n**Returns:**\n- Relawan profiles\n- Availability status\n- Contact information\n- Specializations"
+					}
+				},
+				{
+					"name": "Register New Relawan",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Relawan John\",\n    \"email\": \"relawan.john@emergency.com\",\n    \"password\": \"password123\",\n    \"password_confirmation\": \"password123\",\n    \"phone\": \"+628123456789\",\n    \"nim\": \"1234567890\",\n    \"jurusan\": \"Teknik Informatika\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/register-relawan",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"register-relawan"
+							]
+						},
+						"description": "**Access:** 🔴 ADMIN ONLY\n**Purpose:** Register new relawan/volunteer\n**User Type:** Administrators adding emergency responders\n\n**Creates:** New relawan account with emergency response permissions"
+					}
+				},
+				{
+					"name": "Register New Admin",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Admin Sarah\",\n    \"email\": \"admin.sarah@emergency.com\",\n    \"password\": \"password123\",\n    \"password_confirmation\": \"password123\",\n    \"phone\": \"+628123456789\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/register-admin",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"register-admin"
+							]
+						},
+						"description": "**Access:** 🔴 ADMIN ONLY\n**Purpose:** Register new admin user\n**User Type:** Existing administrators\n\n**Security:** Only existing admins can create new admin accounts"
+					}
+				},
+				{
+					"name": "Delete User",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/users/{{user_id_to_delete}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"users",
+								"{{user_id_to_delete}}"
+							]
+						},
+						"description": "**Access:** 🔴 ADMIN ONLY\n**Purpose:** Delete user account\n**User Type:** Administrators managing user accounts\n\n**⚠️ WARNING:** This action is irreversible\n**Use Case:** Remove inactive or problematic accounts"
+					}
+				}
+			]
+		},
+		{
+			"name": "📸 3. Photo Reports",
+			"description": "Photo report system for non-emergency issues (mainly for regular users)",
+			"item": [
+				{
+					"name": "Upload Photo",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "photo",
+									"type": "file",
+									"src": []
+								},
+								{
+									"key": "description",
+									"value": "Photo evidence for report",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/upload-photo",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"upload-photo"
+							]
+						},
+						"description": "**Access:** 👤 ALL ROLES\n**Purpose:** Upload photo file for reports\n**User Type:** Citizens providing photo evidence\n\n**Accepts:** JPG, PNG, GIF image formats\n**Returns:** Photo URL for use in reports"
+					}
+				},
+				{
+					"name": "Get All Reports",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/reports",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reports"
+							]
+						},
+						"description": "**Access:** 👤 ALL ROLES\n**Purpose:** Get list of photo reports\n**User Type:** \n- 🟢 Users: See only their own reports\n- 🔴 Admins: See all reports\n- 🔵 Relawan: See reports in their area\n\n**Filtering:** Role-based automatic filtering"
+					}
+				},
+				{
+					"name": "Create New Report",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Jalan Rusak di Depan Kampus\",\n    \"description\": \"Ada lubang besar di jalan yang bisa membahayakan pengendara\",\n    \"problem_type_id\": 1,\n    \"location\": \"Jl. Raya Kampus No. 123, Jakarta\",\n    \"latitude\": -6.2088,\n    \"longitude\": 106.8456,\n    \"photo_url\": \"https://example.com/uploaded-photo.jpg\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/reports",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reports"
+							]
+						},
+						"description": "**Access:** 🟢 USER (primarily)\n**Purpose:** Submit new photo report for non-emergency issues\n**User Type:** Citizens reporting infrastructure/environmental problems\n\n**Use Cases:**\n- Road damage\n- Environmental issues\n- Public facility problems\n- Safety concerns"
+					}
+				},
+				{
+					"name": "Get Report Detail",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/reports/{{report_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reports",
+								"{{report_id}}"
+							]
+						},
+						"description": "**Access:** 👤 ALL ROLES\n**Purpose:** Get specific report details\n**User Type:** \n- 🟢 Users: Own reports only\n- 🔴 Admins: Any report\n- 🔵 Relawan: Assigned area reports\n\n**Returns:** Complete report information with photo and location"
+					}
+				},
+				{
+					"name": "Update Report",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Updated: Jalan Rusak di Depan Kampus\",\n    \"description\": \"Lubang semakin besar dan membahayakan - perlu tindakan segera\",\n    \"status\": \"urgent\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/reports/{{report_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reports",
+								"{{report_id}}"
+							]
+						},
+						"description": "**Access:** 👤 ALL ROLES\n**Purpose:** Update report information\n**User Type:**\n- 🟢 Users: Edit their own reports\n- 🔴 Admins: Edit any report + status\n- 🔵 Relawan: Update status of assigned reports\n\n**Permissions vary by role**"
+					}
+				},
+				{
+					"name": "Delete Report",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/reports/{{report_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reports",
+								"{{report_id}}"
+							]
+						},
+						"description": "**Access:** 👤 ALL ROLES\n**Purpose:** Delete photo report\n**User Type:**\n- 🟢 Users: Delete their own reports\n- 🔴 Admins: Delete any report\n\n**Use Case:** Remove resolved or invalid reports"
+					}
+				},
+				{
+					"name": "Get Problem Types",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/problem-types",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"problem-types"
+							]
+						},
+						"description": "**Access:** 👤 ALL ROLES\n**Purpose:** Get list of available problem types\n**User Type:** Anyone creating reports\n\n**Returns:** Categories like Infrastructure, Environmental, Safety, etc.\n**Use Case:** Dropdown options for report categorization"
+					}
+				}
+			]
+		},
+		{
+			"name": "🚨 4. Emergency Panic Button",
+			"description": "Critical emergency reporting system with real-time GPS tracking",
+			"item": [
+				{
+					"name": "Create Panic Report",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"latitude\": -6.2088,\n    \"longitude\": 106.8456,\n    \"description\": \"Kecelakaan lalu lintas, butuh bantuan segera!\",\n    \"emergency_type\": \"traffic_accident\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/panic",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"panic"
+							]
+						},
+						"description": "**Access:** 🟢 USER\n**Purpose:** Report immediate emergencies requiring urgent response\n**User Type:** Citizens in emergency situations\n\n**⚡ CRITICAL FEATURES:**\n- GPS location automatically captured\n- Instantly assigned to on-duty relawan\n- Real-time notifications sent\n- Creates trackable incident ID\n\n**System Response:**\n1. Captures exact timestamp\n2. Identifies relawan on duty\n3. Auto-assigns emergency\n4. Sends immediate alerts"
+					}
+				},
+				{
+					"name": "Get Today's Panic Reports",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/panic/today",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"panic",
+								"today"
+							]
+						},
+						"description": "**Access:** 👤 ALL ROLES\n**Purpose:** View current day emergency incidents\n**User Type & Access:**\n- 🟢 Users: Only their own panic reports\n- 🔵 Relawan: Reports assigned during their shifts\n- 🔴 Admins: All panic reports\n\n**Returns:** Real-time emergency status for today"
+					}
+				},
+				{
+					"name": "Update Panic Status",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": \"in_progress\",\n    \"notes\": \"Tim rescue sudah dikirim ke lokasi\",\n    \"response_time\": \"2025-06-06 14:30:00\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/panic/{{panic_id}}/status",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"panic",
+								"{{panic_id}}",
+								"status"
+							]
+						},
+						"description": "**Access:** 🔵 RELAWAN + 🔴 ADMIN\n**Purpose:** Track progress of emergency response\n**User Type:** Emergency responders and supervisors\n\n**Status Options:**\n- `pending` - Initial state, waiting for response\n- `in_progress` - Relawan responding to scene\n- `resolved` - Emergency successfully handled\n\n**Use Case:** Real-time emergency tracking and coordination"
+					}
+				}
+			]
+		},
+		{
+			"name": "🚨 5. Admin - Panic Management",
+			"description": "Administrative oversight of all emergency incidents (ADMIN ONLY)",
+			"item": [
+				{
+					"name": "Get All Panic Reports",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/panic",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"panic"
+							]
+						},
+						"description": "**Access:** 🔴 ADMIN ONLY\n**Purpose:** Complete oversight of all emergency incidents\n**User Type:** System administrators and supervisors\n\n**Returns:**\n- All panic reports (past and current)\n- Response times and statistics\n- Assigned relawan information\n- Status history and timeline\n- Geographic distribution analysis\n\n**Use Case:** Emergency management dashboard"
+					}
+				},
+				{
+					"name": "Delete Panic Report",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/panic/{{panic_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"panic",
+								"{{panic_id}}"
+							]
+						},
+						"description": "**Access:** 🔴 ADMIN ONLY\n**Purpose:** Remove false alarms or test reports\n**User Type:** System administrators\n\n**⚠️ WARNING:** Use only for confirmed false alarms\n**Use Cases:**\n- Test emergency reports\n- Accidental button presses\n- System testing cleanup"
+					}
+				},
+				{
+					"name": "Get Relawan On Duty",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/relawan-on-duty",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"relawan-on-duty"
+							]
+						},
+						"description": "**Access:** 🔴 ADMIN ONLY\n**Purpose:** Monitor current emergency response capacity\n**User Type:** Administrators managing duty schedules\n\n**Returns:**\n- List of relawan currently on duty\n- Availability status\n- Current emergency assignments\n- Coverage analysis\n\n**Use Case:** Real-time capacity monitoring"
+					}
+				}
+			]
+		},
+		{
+			"name": "👨‍🚒 6. Relawan Functions",
+			"description": "Functions specific to emergency responders/volunteers",
+			"item": [
+				{
+					"name": "Get My Shifts",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/relawan/my-shifts",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"relawan",
+								"my-shifts"
+							]
+						},
+						"description": "**Access:** 🔵 RELAWAN ONLY\n**Purpose:** View personal duty schedule\n**User Type:** Emergency responders checking their shifts\n\n**Returns:**\n- Current shift details\n- Upcoming shift schedule\n- Assigned panic reports during duty days\n- Duty history\n\n**Use Case:** Personal schedule management for relawan"
+					}
+				}
+			]
+		},
+		{
+			"name": "📅 7. Admin - Shift Management",
+			"description": "Pattern-based shift scheduling system for relawan (ADMIN ONLY)",
+			"item": [
+				{
+					"name": "Get All Shifts Overview",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/shifts",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"shifts"
+							]
+						},
+						"description": "**Access:** 🔴 ADMIN ONLY\n**Purpose:** Monitor current and upcoming shift assignments\n**User Type:** Administrators managing shift schedules\n\n**Returns:**\n- Daily shift schedules\n- Assigned relawan per shift\n- Coverage analysis\n- Upcoming shift gaps\n- Schedule conflicts\n\n**Use Case:** Shift oversight and management dashboard"
+					}
+				},
+				{
+					"name": "Update Specific Shift",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"relawan_id\": 5,\n    \"is_active\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/shifts/{{shift_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"shifts",
+								"{{shift_id}}"
+							]
+						},
+						"description": "**Access:** 🔴 ADMIN ONLY\n**Purpose:** Modify specific shift details\n**User Type:** Administrators adjusting schedules\n\n**Modifiable:**\n- Assigned relawan\n- Active status\n\n**Use Cases:**\n- Emergency schedule changes\n- Relawan substitutions\n- Status adjustments"
+					}
+				},
+				{
+					"name": "Delete Shifts by Date",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/shifts/2025-06-15",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"shifts",
+								"2025-06-15"
+							]
+						},
+						"description": "**Access:** 🔴 ADMIN ONLY\n**Purpose:** Cancel entire day's shifts\n**User Type:** Administrators managing special circumstances\n\n**Format:** YYYY-MM-DD\n**Use Cases:**\n- Public holidays\n- Emergency situations\n- System maintenance days\n\n**⚠️ Note:** Cancels ALL shifts for the specified date"
+					}
+				},
+				{
+					"name": "Delete Shifts by Relawan Name",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"relawan_name\": \"John Doe\",\n    \"date_from\": \"2025-06-01\",\n    \"date_to\": \"2025-06-30\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/shifts/relawan/by-name",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"shifts",
+								"relawan",
+								"by-name"
+							]
+						},
+						"description": "**Access:** 🔴 ADMIN ONLY\n**Purpose:** Remove specific relawan from shifts by name\n**User Type:** Administrators managing relawan availability\n\n**Parameters:**\n- relawan_name (required)\n- date_from (optional)\n- date_to (optional)\n\n**Use Cases:**\n- Relawan resignation\n- Extended leave\n- Disciplinary actions"
+					}
+				},
+				{
+					"name": "Delete Shifts by Relawan ID",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"relawan_id\": 3,\n    \"date_from\": \"2025-06-01\",\n    \"date_to\": \"2025-06-30\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/shifts/relawan/by-id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"shifts",
+								"relawan",
+								"by-id"
+							]
+						},
+						"description": "**Access:** 🔴 ADMIN ONLY\n**Purpose:** Remove specific relawan from shifts by ID\n**User Type:** Administrators with precise relawan identification\n\n**More reliable than name-based deletion**\n**Use when you have exact relawan ID**"
+					}
+				},
+				{
+					"name": "🎯 Generate Shifts from Patterns",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"start_date\": \"2025-06-01\",\n    \"end_date\": \"2025-06-30\",\n    \"overwrite_existing\": false\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/shifts/generate-from-patterns",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"shifts",
+								"generate-from-patterns"
+							]
+						},
+						"description": "**Access:** 🔴 ADMIN ONLY\n**Purpose:** 🎯 KEY FUNCTION - Generate actual shifts from defined patterns\n**User Type:** Administrators creating monthly schedules\n\n**⚡ CORE SYSTEM FEATURE:**\nThis is the main function that creates actual shift schedules from your weekly patterns!\n\n**Process:**\n1. Takes your weekly patterns (Monday = Relawan A+B, etc.)\n2. Applies them to the specified date range\n3. Creates individual daily shifts\n4. Repeats weekly pattern throughout the period\n\n**Parameters:**\n- start_date: Beginning of schedule period\n- end_date: End of schedule period  \n- overwrite_existing: Replace existing shifts?\n\n**Example:** Generate June 2025 shifts using current weekly patterns"
+					}
+				},
+				{
+					"name": "Get Available Relawan",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/relawans",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"relawans"
+							]
+						},
+						"description": "**Access:** 🔴 ADMIN ONLY\n**Purpose:** Get list of available relawan for shift assignment\n**User Type:** Administrators creating shift assignments\n\n**Returns:**\n- Available relawan list\n- Contact information\n- Specializations\n- Current availability status\n\n**Use Case:** Support for shift assignment interfaces"
+					}
+				}
+			]
+		},
+		{
+			"name": "📋 8. Admin - Pattern Management",
+			"description": "Create and manage weekly shift patterns - CORE SYSTEM FEATURE (ADMIN ONLY)",
+			"item": [
+				{
+					"name": "Get All Patterns",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/patterns",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"patterns"
+							]
+						},
+						"description": "**Access:** 🔴 ADMIN ONLY\n**Purpose:** View current weekly pattern configurations\n**User Type:** Administrators managing shift templates\n\n**🔑 CORE CONCEPT - Weekly Pattern Templates:**\nPatterns define who works on which day of the week. These templates are then used to generate actual monthly schedules.\n\n**Returns:**\n- Monday patterns (which relawan)\n- Tuesday patterns, Wednesday patterns, etc.\n- Complete weekly template overview\n\n**Use Case:** Review current weekly schedule template before generating monthly shifts"
+					}
+				},
+				{
+					"name": "🎯 Set Day Pattern",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"day_of_week\": 1,\n    \"relawan_ids\": [1, 3, 5]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/patterns/set-day",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"patterns",
+								"set-day"
+							]
+						},
+						"description": "**Access:** 🔴 ADMIN ONLY\n**Purpose:** 🎯 CORE FUNCTION - Define shift pattern for specific day\n**User Type:** Administrators creating weekly templates\n\n**⚡ KEY SYSTEM FEATURE:**\nThis defines your weekly schedule template!\n\n**Day Numbers:**\n- 1 = Monday\n- 2 = Tuesday  \n- 3 = Wednesday\n- 4 = Thursday\n- 5 = Friday\n- 6 = Saturday\n- 7 = Sunday\n\n**Example:** Set Monday pattern with Relawan 1, 3, 5\n\n**Process:**\n1. Define which relawan work on specific day\n2. This pattern repeats every week when generating shifts"
+					}
+				},
+				{
+					"name": "Add Relawan to Day",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"day_of_week\": 2,\n    \"relawan_id\": 4\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/patterns/add-relawan",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"patterns",
+								"add-relawan"
+							]
+						},
+						"description": "**Access:** 🔴 ADMIN ONLY\n**Purpose:** Add additional relawan to existing day pattern\n**User Type:** Administrators expanding coverage\n\n**Use Cases:**\n- Add backup relawan to busy days\n- Increase coverage for high-risk periods\n- Add specialized relawan for specific days\n\n**Example:** Add Relawan 4 to Tuesday pattern"
+					}
+				},
+				{
+					"name": "Remove Relawan from Day",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"day_of_week\": 3,\n    \"relawan_id\": 2\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/patterns/remove-relawan",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"patterns",
+								"remove-relawan"
+							]
+						},
+						"description": "**Access:** 🔴 ADMIN ONLY\n**Purpose:** Remove relawan from specific day pattern\n**User Type:** Administrators adjusting coverage\n\n**Use Cases:**\n- Remove relawan from overloaded days\n- Adjust for relawan availability changes\n- Rebalance weekly workload\n\n**Example:** Remove Relawan 2 from Wednesday pattern"
+					}
+				},
+				{
+					"name": "Toggle Pattern Active Status",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/patterns/{{pattern_id}}/toggle",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"patterns",
+								"{{pattern_id}}",
+								"toggle"
+							]
+						},
+						"description": "**Access:** 🔴 ADMIN ONLY\n**Purpose:** Enable/disable specific pattern without deleting\n**User Type:** Administrators managing pattern status\n\n**Use Cases:**\n- Temporarily disable patterns for holidays\n- Test different pattern configurations\n- Seasonal schedule adjustments\n\n**Benefit:** Keep patterns for future use without active application"
+					}
+				},
+				{
+					"name": "Clear Day Pattern",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/patterns/day/7",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"patterns",
+								"day",
+								"7"
+							]
+						},
+						"description": "**Access:** 🔴 ADMIN ONLY\n**Purpose:** Clear all patterns for specific day of week\n**User Type:** Administrators resetting day configurations\n\n**Day Numbers:** 1=Monday, 7=Sunday\n\n**Use Cases:**\n- Make Sunday a complete rest day\n- Reset day configuration to start over\n- Remove all assignments for specific weekday\n\n**Example URL shows:** Clear all Sunday (day 7) patterns"
+					}
+				},
+				{
+					"name": "Get Day Pattern Details",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admin/patterns/day/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"patterns",
+								"day",
+								"1"
+							]
+						},
+						"description": "**Access:** 🔴 ADMIN ONLY\n**Purpose:** Get detailed pattern for specific day of week\n**User Type:** Administrators reviewing day configurations\n\n**Day Numbers:** 1=Monday through 7=Sunday\n\n**Returns:**\n- All relawan assigned to this day\n- Pattern status (active/inactive)\n\n**Example URL shows:** Get Monday (day 1) pattern details"
+					}
+				},
+				{
+					"name": "🎯 Bulk Set Patterns",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"patterns\": [\n        {\n            \"day_of_week\": 1,\n            \"relawan_ids\": [1, 2]\n        },\n        {\n            \"day_of_week\": 2,\n            \"relawan_ids\": [3, 4]\n        },\n        {\n            \"day_of_week\": 3,\n            \"relawan_ids\": [1, 5]\n        }\n    ],\n    \"overwrite_existing\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/patterns/bulk-set",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admin",
+								"patterns",
+								"bulk-set"
+							]
+						},
+						"description": "**Access:** 🔴 ADMIN ONLY\n**Purpose:** 🎯 EFFICIENCY FEATURE - Set multiple day patterns at once\n**User Type:** Administrators creating complete weekly schedules\n\n**⚡ BULK OPERATION:**\nConfigure entire weekly pattern in one request!\n\n**Benefits:**\n- Set up complete weekly schedule efficiently\n- Ensure consistent coverage across days\n- Reduce API calls for pattern setup\n\n**Example Creates:**\n- Monday: Relawan 1,2\n- Tuesday: Relawan 3,4  \n- Wednesday: Relawan 1,5\n\n**Best Practice:** Use this for initial weekly pattern setup"
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8000/api",
+			"type": "string"
+		},
+		{
+			"key": "auth_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "user_id",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "report_id",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "panic_id",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "shift_id",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "pattern_id",
+			"value": "1",
+			"type": "string"
+		},
+		{
+			"key": "user_id_to_delete",
+			"value": "999",
+			"type": "string"
+		}
+	]
+}

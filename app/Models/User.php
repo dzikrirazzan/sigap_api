@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Support\Str;
 
 class User extends Authenticatable
 {
@@ -16,7 +17,9 @@ class User extends Authenticatable
      */
     protected function serializeDate(\DateTimeInterface $date)
     {
-        return $date->setTimezone(new \DateTimeZone('Asia/Jakarta'))->format('Y-m-d\TH:i:s.uP');
+        // Create a new DateTime object from the interface and set timezone
+        $dateTime = new \DateTime($date->format('Y-m-d H:i:s'), $date->getTimezone());
+        return $dateTime->setTimezone(new \DateTimeZone('Asia/Jakarta'))->format('Y-m-d\TH:i:s.uP');
     }
 
     /**
@@ -102,7 +105,7 @@ class User extends Authenticatable
 
         $expiresAt = now()->addMinutes(config('sanctum.refresh_expiration', 60 * 24 * 7));
 
-        $token = \Str::random(80);
+        $token = Str::random(80);
 
         $refreshToken = $this->refreshTokens()->create([
             'token' => $token,

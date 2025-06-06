@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\PanicReport;
 use App\Models\User;
 use App\Models\RelawanShift;
+use App\Models\RelawanShiftPattern;
 use Carbon\Carbon;
 
 class PanicController extends Controller
@@ -61,12 +62,13 @@ class PanicController extends Controller
 
         // Jika user adalah relawan, cek apakah sedang bertugas hari ini
         if ($user->role === 'relawan') {
-            $onDuty = RelawanShift::where('relawan_id', $userId)
-                ->where('shift_date', $today)
-                ->exists();
+            $onDuty = $this->isRelawanOnDutyToday($userId);
 
             if (!$onDuty) {
-                return response()->json(['message' => 'Not on duty today'], 403);
+                return response()->json([
+                    'message' => 'Access denied. You are not assigned for duty today.',
+                    'hint' => 'Only relawan assigned through weekly patterns can access panic reports.'
+                ], 403);
             }
 
             $panics = PanicReport::whereDate('created_at', $today)
@@ -86,66 +88,157 @@ class PanicController extends Controller
         return response()->json(['message' => 'Unauthorized. Admin or Relawan access required.'], 403);
     }
 
-    // Relawan mengambil/handle panic report
-    public function handle(Request $request, $panicId)
+    // Relawan & Admin update status panic report (handling/resolved/cancelled)
+    public function updateStatus(Request $request, $panicId)
     {
-        $relawanId = auth()->id();
+        $userId = auth()->id();
+        $user = auth()->user();
         $today = Carbon::now()->toDateString();
 
-        // Cek apakah relawan ini on duty hari ini
-        $onDuty = RelawanShift::where('relawan_id', $relawanId)
-            ->where('shift_date', $today)
-            ->exists();
+        // Admin bisa update ke semua status, relawan hanya handling/resolved
+        $allowedStatuses = $user->role === 'admin'
+            ? ['handling', 'resolved', 'cancelled']
+            : ['handling', 'resolved'];
 
-        if (!$onDuty) {
-            return response()->json(['message' => 'Not on duty today'], 403);
+        // Validasi input
+        $request->validate([
+            'status' => 'required|in:' . implode(',', $allowedStatuses)
+        ]);
+
+        $newStatus = $request->status;
+
+        // Untuk relawan: cek apakah on duty hari ini
+        if ($user->role === 'relawan') {
+            $onDuty = $this->isRelawanOnDutyToday($userId);
+
+            if (!$onDuty) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Access denied. You are not assigned for duty today.',
+                    'hint' => 'Only relawan assigned through weekly patterns can update panic status.'
+                ], 403);
+            }
         }
 
         $panic = PanicReport::findOrFail($panicId);
 
-        if ($panic->status !== PanicReport::STATUS_PENDING) {
-            return response()->json(['message' => 'Panic report already handled'], 400);
-        }
+        // Logic berdasarkan status yang diminta
+        if ($newStatus === 'handling') {
+            // Handle panic (pending → handling)
+            if ($panic->status !== PanicReport::STATUS_PENDING) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Can only handle pending panic reports'
+                ], 400);
+            }
 
-        $panic->update([
-            'status' => PanicReport::STATUS_HANDLING,
-            'handled_by' => $relawanId,
-            'handled_at' => now(),
-        ]);
+            $panic->update([
+                'status' => PanicReport::STATUS_HANDLING,
+                'handled_by' => $userId,
+                'handled_at' => now(),
+            ]);
+
+            $message = 'Panic report is now being handled';
+        } elseif ($newStatus === 'resolved') {
+            // Resolve panic (handling → resolved)
+            // Cek apakah ini user yang handle atau masih pending
+            if ($panic->status === PanicReport::STATUS_PENDING) {
+                // Langsung dari pending ke resolved (skip handling)
+                $panic->update([
+                    'status' => PanicReport::STATUS_RESOLVED,
+                    'handled_by' => $userId,
+                    'handled_at' => now(),
+                ]);
+                $message = 'Panic report resolved directly';
+            } elseif ($panic->status === PanicReport::STATUS_HANDLING) {
+                // Untuk relawan: hanya yang handle yang bisa resolve
+                // Untuk admin: bisa resolve siapa saja
+                if ($user->role === 'relawan' && $panic->handled_by !== $userId) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Can only resolve panic reports that you are handling'
+                    ], 403);
+                }
+
+                $panic->update([
+                    'status' => PanicReport::STATUS_RESOLVED,
+                ]);
+                $message = 'Panic report resolved';
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Can only resolve pending or handling panic reports'
+                ], 400);
+            }
+        } elseif ($newStatus === 'cancelled') {
+            // Hanya admin yang bisa cancel
+            if ($user->role !== 'admin') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Only admin can cancel panic reports'
+                ], 403);
+            }
+
+            $panic->update([
+                'status' => PanicReport::STATUS_CANCELLED,
+            ]);
+            $message = 'Panic report cancelled by admin';
+        }
 
         $panic->load(['user:id,name,email,no_telp,nik', 'handler:id,name']);
 
         return response()->json([
             'success' => true,
             'panic' => $panic,
-            'message' => 'Panic report is now being handled'
+            'message' => $message,
+            'action' => "Status updated to {$newStatus}",
+            'updated_by' => $user->role
         ]);
     }
 
-    // Relawan menyelesaikan panic report
-    public function resolve(Request $request, $panicId)
+    // Admin menghapus panic report
+    public function destroy($panicId)
     {
-        $relawanId = auth()->id();
+        $user = auth()->user();
 
-        $panic = PanicReport::where('id', $panicId)
-            ->where('handled_by', $relawanId)
-            ->firstOrFail();
-
-        if ($panic->status !== PanicReport::STATUS_HANDLING) {
-            return response()->json(['message' => 'Can only resolve reports that are being handled'], 400);
+        // Hanya admin yang bisa delete
+        if ($user->role !== 'admin') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only admin can delete panic reports'
+            ], 403);
         }
 
-        $panic->update([
-            'status' => PanicReport::STATUS_RESOLVED,
-        ]);
+        try {
+            $panic = PanicReport::findOrFail($panicId);
 
-        $panic->load(['user:id,name,email,no_telp,nik', 'handler:id,name']);
+            // Simpan data untuk response sebelum dihapus
+            $panicData = [
+                'id' => $panic->id,
+                'user_name' => $panic->user->name ?? 'Unknown',
+                'status' => $panic->status,
+                'created_at' => $panic->created_at
+            ];
 
-        return response()->json([
-            'success' => true,
-            'panic' => $panic,
-            'message' => 'Panic report resolved'
-        ]);
+            $panic->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Panic report deleted successfully',
+                'deleted_panic' => $panicData,
+                'deleted_by' => $user->name
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Panic report not found'
+            ], 404);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete panic report: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     // Admin melihat semua panic reports
@@ -168,23 +261,41 @@ class PanicController extends Controller
         return response()->json($panics);
     }
 
-    // Get relawan yang sedang bertugas hari ini
+    // Get relawan yang sedang bertugas hari ini (berdasarkan pattern + actual shifts)
     public function getTodayRelawan()
     {
         $today = Carbon::now()->toDateString();
+        $dayOfWeek = strtolower(Carbon::now()->format('l')); // monday, tuesday, etc.
 
-        $relawans = RelawanShift::where('shift_date', $today)
+        // Get dari actual shifts
+        $actualShifts = RelawanShift::where('shift_date', $today)
             ->with('relawan:id,name,email,no_telp')
             ->get()
             ->pluck('relawan');
 
+        // Get dari patterns untuk hari ini
+        $patternRelawans = RelawanShiftPattern::where('day_of_week', $dayOfWeek)
+            ->where('is_active', true)
+            ->with('relawan:id,name,email,no_telp')
+            ->get()
+            ->pluck('relawan');
+
+        // Gabungkan dan remove duplicates
+        $allRelawans = $actualShifts->merge($patternRelawans)->unique('id')->values();
+
         return response()->json([
             'date' => $today,
-            'relawan_on_duty' => $relawans
+            'day_of_week' => $dayOfWeek,
+            'relawan_on_duty' => $allRelawans,
+            'total_on_duty' => $allRelawans->count(),
+            'source' => [
+                'from_actual_shifts' => $actualShifts->count(),
+                'from_patterns' => $patternRelawans->count()
+            ]
         ]);
     }
 
-    // Relawan cek shift mereka sendiri
+    // Relawan cek shift mereka sendiri - berdasarkan pattern dan actual shifts
     public function getMyShifts(Request $request)
     {
         $relawanId = auth()->id();
@@ -199,13 +310,19 @@ class PanicController extends Controller
         $startDate = $request->get('start_date', Carbon::now()->subDays(7)->toDateString());
         $endDate = $request->get('end_date', Carbon::now()->addDays(7)->toDateString());
 
-        $shifts = RelawanShift::where('relawan_id', $relawanId)
+        // Get actual shifts
+        $actualShifts = RelawanShift::where('relawan_id', $relawanId)
             ->whereBetween('shift_date', [$startDate, $endDate])
             ->orderBy('shift_date', 'desc')
             ->get();
 
+        // Get patterns untuk relawan ini
+        $patterns = RelawanShiftPattern::where('relawan_id', $relawanId)
+            ->where('is_active', true)
+            ->get();
+
         $today = Carbon::now()->toDateString();
-        $isOnDutyToday = $shifts->where('shift_date', $today)->isNotEmpty();
+        $isOnDutyToday = $this->isRelawanOnDutyToday($relawanId);
 
         return response()->json([
             'relawan' => [
@@ -214,7 +331,7 @@ class PanicController extends Controller
                 'email' => $user->email
             ],
             'is_on_duty_today' => $isOnDutyToday,
-            'shifts' => $shifts->map(function ($shift) use ($today) {
+            'actual_shifts' => $actualShifts->map(function ($shift) use ($today) {
                 return [
                     'id' => $shift->id,
                     'shift_date' => $shift->shift_date,
@@ -225,11 +342,50 @@ class PanicController extends Controller
                     'created_at' => $shift->created_at
                 ];
             }),
-            'total_shifts' => $shifts->count(),
-            'period' => [
-                'start_date' => $startDate,
-                'end_date' => $endDate
+            'weekly_patterns' => $patterns->map(function ($pattern) {
+                return [
+                    'id' => $pattern->id,
+                    'day_of_week' => $pattern->day_of_week,
+                    'day_name' => RelawanShiftPattern::DAYS[$pattern->day_of_week] ?? ucfirst($pattern->day_of_week),
+                    'is_active' => $pattern->is_active,
+                    'created_at' => $pattern->created_at
+                ];
+            }),
+            'summary' => [
+                'total_actual_shifts' => $actualShifts->count(),
+                'total_weekly_patterns' => $patterns->count(),
+                'period' => [
+                    'start_date' => $startDate,
+                    'end_date' => $endDate
+                ]
             ]
         ]);
+    }
+
+    /**
+     * Helper method untuk check apakah relawan on duty hari ini
+     * Kombinasi dari pattern dan actual shift assignments
+     */
+    private function isRelawanOnDutyToday($relawanId)
+    {
+        $today = Carbon::now()->toDateString();
+        $dayOfWeek = strtolower(Carbon::now()->format('l')); // monday, tuesday, etc.
+
+        // Check 1: Ada shift aktual untuk hari ini
+        $hasActualShift = RelawanShift::where('relawan_id', $relawanId)
+            ->where('shift_date', $today)
+            ->exists();
+
+        if ($hasActualShift) {
+            return true;
+        }
+
+        // Check 2: Pattern untuk hari ini (jika tidak ada shift aktual)
+        $hasPatternForToday = RelawanShiftPattern::where('relawan_id', $relawanId)
+            ->where('day_of_week', $dayOfWeek)
+            ->where('is_active', true)
+            ->exists();
+
+        return $hasPatternForToday;
     }
 }
