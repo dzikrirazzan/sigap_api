@@ -4,83 +4,154 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\RelawanShift;
+use App\Models\RelawanShiftPattern;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Artisan;
 
 class RelawanShiftController extends Controller
 {
-    // Generate shifts dari patterns untuk beberapa hari ke depan
+    // ✅ Generate shifts from weekly patterns - Auto loops every week
     public function generateFromPatterns(Request $request)
     {
         $request->validate([
-            'days' => 'integer|min:1|max:30',
-            'start_date' => 'date|after_or_equal:today',
-            'overwrite' => 'boolean'
+            'days' => 'integer|min:1|max:30'
         ]);
 
         $days = $request->get('days', 7);
-        $startDate = $request->get('start_date', Carbon::today()->toDateString());
-        $overwrite = $request->get('overwrite', false);
 
-        // Call the artisan command
-        Artisan::call('relawan:generate-shifts', [
-            '--start' => $startDate,
-            '--days' => $days,
-            '--overwrite' => $overwrite
+        // Call the simplified auto-generation command
+        Artisan::call('shifts:auto-generate', [
+            '--days' => $days
         ]);
 
         $output = Artisan::output();
 
         return response()->json([
             'success' => true,
-            'message' => "Generated shifts from patterns for {$days} days starting from {$startDate}",
-            'parameters' => [
-                'days' => $days,
-                'start_date' => $startDate,
-                'overwrite' => $overwrite
-            ],
-            'command_output' => $output
+            'message' => "Generated shifts for {$days} days using weekly patterns",
+            'command_output' => $output,
+            'note' => 'Weekly patterns automatically loop. Admin can modify patterns for each day of the week.'
         ]);
     }
 
-    // Admin melihat jadwal shift relawan
+    // ✅ Admin view current shifts and weekly patterns
     public function index(Request $request)
     {
-        $query = RelawanShift::with('relawan:id,name,email,no_telp');
-
-        // Filter berdasarkan tanggal jika ada
-        if ($request->has('date')) {
-            $query->where('shift_date', $request->date);
-        } else {
-            // Default tampilkan shift 7 hari ke depan
-            $query->whereBetween('shift_date', [
+        // Get actual shifts for the next 7 days
+        $actualShifts = RelawanShift::with('relawan:id,name,email,no_telp')
+            ->whereBetween('shift_date', [
                 Carbon::today()->toDateString(),
                 Carbon::today()->addDays(7)->toDateString()
+            ])
+            ->orderBy('shift_date', 'asc')
+            ->get()
+            ->groupBy('shift_date');
+
+        // Get weekly patterns for reference
+        $weeklyPatterns = RelawanShiftPattern::with('relawan:id,name,email')
+            ->where('is_active', true)
+            ->orderBy('day_of_week')
+            ->get()
+            ->groupBy('day_of_week');
+
+        return response()->json([
+            'success' => true,
+            'actual_shifts' => $actualShifts,
+            'weekly_patterns' => $weeklyPatterns,
+            'note' => 'Weekly patterns loop automatically. Modify patterns to change future shifts.'
+        ]);
+    }
+
+    // ✅ Admin assigns relawan to specific day of week (Monday-Sunday)
+    public function setDayPattern(Request $request)
+    {
+        $request->validate([
+            'day_of_week' => 'required|in:monday,tuesday,wednesday,thursday,friday,saturday,sunday',
+            'relawan_ids' => 'required|array|min:1',
+            'relawan_ids.*' => 'exists:users,id'
+        ]);
+
+        $dayOfWeek = $request->day_of_week;
+        $relawanIds = $request->relawan_ids;
+
+        // Validate all users are relawan
+        $relawans = User::whereIn('id', $relawanIds)
+            ->where('role', User::ROLE_RELAWAN)
+            ->get();
+
+        if ($relawans->count() !== count($relawanIds)) {
+            return response()->json(['message' => 'Some users are not relawan'], 400);
+        }
+
+        // ✅ Delete old patterns for this day and insert new ones
+        RelawanShiftPattern::where('day_of_week', $dayOfWeek)->delete();
+
+        // Insert new patterns
+        $newPatterns = [];
+        foreach ($relawanIds as $relawanId) {
+            $newPatterns[] = RelawanShiftPattern::create([
+                'day_of_week' => $dayOfWeek,
+                'relawan_id' => $relawanId,
+                'is_active' => true
             ]);
         }
 
-        $shifts = $query->orderBy('shift_date', 'desc')->get();
-
-        // Group by date
-        $groupedShifts = $shifts->groupBy('shift_date');
-
         return response()->json([
             'success' => true,
-            'shifts' => $groupedShifts,
-            'note' => 'Shifts are now managed through weekly patterns. Use Pattern Management endpoints to set recurring schedules.'
+            'message' => "Updated {$dayOfWeek} pattern with " . count($relawanIds) . " relawan",
+            'day_of_week' => $dayOfWeek,
+            'relawan_assigned' => $relawans->pluck('name'),
+            'patterns_created' => count($newPatterns)
         ]);
     }
 
-    // Admin update shift individual - ganti relawan di shift tertentu
-    public function updateShift(Request $request, $shiftId)
+    // ✅ Admin deletes specific relawan from specific day
+    public function removeRelawanFromDay(Request $request)
     {
         $request->validate([
+            'day_of_week' => 'required|in:monday,tuesday,wednesday,thursday,friday,saturday,sunday',
             'relawan_id' => 'required|exists:users,id'
         ]);
 
-        // Cek apakah relawan_id yang baru adalah relawan
-        $relawan = User::where('id', $request->relawan_id)
+        $dayOfWeek = $request->day_of_week;
+        $relawanId = $request->relawan_id;
+
+        // Find and delete the specific pattern
+        $pattern = RelawanShiftPattern::where('day_of_week', $dayOfWeek)
+            ->where('relawan_id', $relawanId)
+            ->first();
+
+        if (!$pattern) {
+            return response()->json([
+                'message' => "Relawan not found in {$dayOfWeek} pattern"
+            ], 404);
+        }
+
+        $relawanName = $pattern->relawan->name;
+        $pattern->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => "Removed {$relawanName} from {$dayOfWeek} pattern",
+            'day_of_week' => $dayOfWeek,
+            'removed_relawan' => $relawanName
+        ]);
+    }
+
+    // ✅ Admin adds relawan to specific day (without removing others)
+    public function addRelawanToDay(Request $request)
+    {
+        $request->validate([
+            'day_of_week' => 'required|in:monday,tuesday,wednesday,thursday,friday,saturday,sunday',
+            'relawan_id' => 'required|exists:users,id'
+        ]);
+
+        $dayOfWeek = $request->day_of_week;
+        $relawanId = $request->relawan_id;
+
+        // Validate user is relawan
+        $relawan = User::where('id', $relawanId)
             ->where('role', User::ROLE_RELAWAN)
             ->first();
 
@@ -88,113 +159,66 @@ class RelawanShiftController extends Controller
             return response()->json(['message' => 'User is not a relawan'], 400);
         }
 
-        $shift = RelawanShift::findOrFail($shiftId);
-        $oldRelawan = $shift->relawan->name;
-
-        $shift->update([
-            'relawan_id' => $request->relawan_id
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => "Shift updated successfully. Changed from {$oldRelawan} to {$relawan->name}",
-            'shift' => $shift->load('relawan:id,name,email,no_telp')
-        ]);
-    }
-
-    // Admin hapus shift untuk tanggal tertentu
-    public function destroy($date)
-    {
-        $deletedCount = RelawanShift::where('shift_date', $date)->delete();
-
-        return response()->json([
-            'success' => true,
-            'message' => "Deleted {$deletedCount} shifts for {$date}"
-        ]);
-    }
-
-    // Admin hapus shift berdasarkan nama relawan dan tanggal
-    public function destroyByRelawan(Request $request)
-    {
-        $request->validate([
-            'relawan_name' => 'required|string',
-            'shift_date' => 'required|date'
-        ]);
-
-        // Cari relawan berdasarkan nama
-        $relawan = User::where('role', User::ROLE_RELAWAN)
-            ->where('name', 'LIKE', '%' . $request->relawan_name . '%')
+        // Check if already exists
+        $existing = RelawanShiftPattern::where('day_of_week', $dayOfWeek)
+            ->where('relawan_id', $relawanId)
             ->first();
 
-        if (!$relawan) {
-            return response()->json(['message' => 'Relawan not found'], 404);
-        }
-
-        // Hapus shift berdasarkan relawan dan tanggal
-        $deletedShift = RelawanShift::where('relawan_id', $relawan->id)
-            ->where('shift_date', $request->shift_date)
-            ->first();
-
-        if (!$deletedShift) {
+        if ($existing) {
             return response()->json([
-                'message' => "No shift found for {$relawan->name} on {$request->shift_date}"
-            ], 404);
+                'message' => "{$relawan->name} is already assigned to {$dayOfWeek}"
+            ], 400);
         }
 
-        $deletedShift->delete();
+        // Add to pattern
+        RelawanShiftPattern::create([
+            'day_of_week' => $dayOfWeek,
+            'relawan_id' => $relawanId,
+            'is_active' => true
+        ]);
 
         return response()->json([
             'success' => true,
-            'message' => "Deleted shift for {$relawan->name} on {$request->shift_date}",
-            'deleted_shift' => [
-                'id' => $deletedShift->id,
-                'relawan_name' => $relawan->name,
-                'shift_date' => $deletedShift->shift_date
-            ]
+            'message' => "Added {$relawan->name} to {$dayOfWeek} pattern",
+            'day_of_week' => $dayOfWeek,
+            'added_relawan' => $relawan->name
         ]);
     }
 
-    // Admin hapus shift berdasarkan ID relawan dan tanggal (alternative)
-    public function destroyByRelawanId(Request $request)
+    // ✅ View current weekly patterns (Monday-Sunday setup)
+    public function getWeeklyPatterns()
     {
-        $request->validate([
-            'relawan_id' => 'required|exists:users,id',
-            'shift_date' => 'required|date'
-        ]);
+        $patterns = RelawanShiftPattern::with('relawan:id,name,email')
+            ->where('is_active', true)
+            ->get()
+            ->groupBy('day_of_week');
 
-        // Pastikan user adalah relawan
-        $relawan = User::where('id', $request->relawan_id)
-            ->where('role', User::ROLE_RELAWAN)
-            ->first();
+        $weeklySchedule = [];
+        $days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
-        if (!$relawan) {
-            return response()->json(['message' => 'User is not a relawan'], 400);
+        foreach ($days as $day) {
+            $dayPatterns = $patterns->get($day, collect());
+            $weeklySchedule[$day] = [
+                'day_name' => RelawanShiftPattern::DAYS[$day],
+                'relawan_count' => $dayPatterns->count(),
+                'relawan' => $dayPatterns->map(function ($pattern) {
+                    return [
+                        'id' => $pattern->relawan->id,
+                        'name' => $pattern->relawan->name,
+                        'email' => $pattern->relawan->email
+                    ];
+                })
+            ];
         }
-
-        $deletedShift = RelawanShift::where('relawan_id', $request->relawan_id)
-            ->where('shift_date', $request->shift_date)
-            ->first();
-
-        if (!$deletedShift) {
-            return response()->json([
-                'message' => "No shift found for {$relawan->name} on {$request->shift_date}"
-            ], 404);
-        }
-
-        $deletedShift->delete();
 
         return response()->json([
             'success' => true,
-            'message' => "Deleted shift for {$relawan->name} on {$request->shift_date}",
-            'deleted_shift' => [
-                'id' => $deletedShift->id,
-                'relawan_name' => $relawan->name,
-                'shift_date' => $deletedShift->shift_date
-            ]
+            'weekly_patterns' => $weeklySchedule,
+            'note' => 'These patterns repeat automatically every week'
         ]);
     }
 
-    // Get semua relawan untuk dropdown
+    // Get all available relawan for assignments
     public function getRelawans()
     {
         $relawans = User::where('role', User::ROLE_RELAWAN)
@@ -206,6 +230,18 @@ class RelawanShiftController extends Controller
             'success' => true,
             'relawans' => $relawans,
             'total' => $relawans->count()
+        ]);
+    }
+
+    // ✅ Admin delete all shifts for specific date (if needed for manual override)
+    public function deleteShiftsByDate($date)
+    {
+        $deletedCount = RelawanShift::where('shift_date', $date)->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => "Deleted {$deletedCount} shifts for {$date}",
+            'note' => 'Run generate-from-patterns to recreate shifts from weekly patterns'
         ]);
     }
 }

@@ -11,29 +11,68 @@ use Carbon\Carbon;
 
 class PanicController extends Controller
 {
-    // User tekan panic button - optimized for speed with minimal required data
+    // User tekan panic button - langsung ke relawan yang sedang jaga
     public function store(Request $request)
     {
         $request->validate([
             'latitude' => 'required|numeric',
             'longitude' => 'required|numeric',
+            'description' => 'nullable|string|max:500',
         ]);
 
+        $userId = auth()->id();
+
+        // Cek apakah user sudah punya panic report aktif hari ini
+        $existingPanic = PanicReport::where('user_id', $userId)
+            ->whereDate('created_at', Carbon::today())
+            ->where('status', '!=', 'resolved')
+            ->first();
+
+        if ($existingPanic) {
+            return response()->json([
+                'message' => 'You already have an active panic report today. Please wait for resolution.',
+                'existing_panic' => $existingPanic
+            ], 409);
+        }
+
+        // Dapatkan relawan yang sedang jaga hari ini
+        $onDutyRelawans = $this->getTodayOnDutyRelawans();
+
+        if ($onDutyRelawans->isEmpty()) {
+            return response()->json([
+                'message' => 'No emergency responders are currently on duty. Please contact emergency services directly.',
+                'emergency_numbers' => [
+                    'police' => '110',
+                    'fire' => '113', 
+                    'ambulance' => '118'
+                ]
+            ], 503);
+        }
+
+        // Buat panic report
         $panic = PanicReport::create([
-            'user_id' => auth()->id(),
+            'user_id' => $userId,
             'latitude' => $request->latitude,
             'longitude' => $request->longitude,
+            'description' => $request->description,
             'status' => PanicReport::STATUS_PENDING,
         ]);
 
-        // Load relasi user dengan data lengkap termasuk no_telp
+        // Load relasi user
         $panic->load('user');
 
         return response()->json([
             'success' => true,
             'panic' => $panic,
-            'message' => 'Emergency alert sent successfully. Help is on the way!',
-            'required_fields_only' => 'Only latitude and longitude are required for fastest response'
+            'message' => 'Emergency alert sent! Responders on duty have been notified.',
+            'assigned_relawan' => $onDutyRelawans->map(function ($relawan) {
+                return [
+                    'id' => $relawan->id,
+                    'name' => $relawan->name,
+                    'phone' => $relawan->no_telp
+                ];
+            }),
+            'total_responders' => $onDutyRelawans->count()
         ]);
     }
 
@@ -360,6 +399,35 @@ class PanicController extends Controller
                 ]
             ]
         ]);
+    }
+
+    /**
+     * Helper method untuk mendapatkan relawan yang sedang jaga hari ini
+     * Priority: Actual Shift > Weekly Pattern
+     */
+    private function getTodayOnDutyRelawans()
+    {
+        $today = Carbon::now()->toDateString();
+        $dayOfWeek = strtolower(Carbon::now()->format('l')); // monday, tuesday, etc.
+
+        // Priority 1: Cek actual shifts untuk hari ini
+        $actualShifts = RelawanShift::where('shift_date', $today)
+            ->with('relawan:id,name,email,no_telp')
+            ->get()
+            ->pluck('relawan')
+            ->filter(); // Remove null values
+
+        if ($actualShifts->isNotEmpty()) {
+            return $actualShifts;
+        }
+
+        // Priority 2: Gunakan pattern untuk hari ini jika tidak ada actual shift
+        $patterns = RelawanShiftPattern::where('day_of_week', $dayOfWeek)
+            ->where('is_active', true)
+            ->with('relawan:id,name,email,no_telp')
+            ->get();
+
+        return $patterns->pluck('relawan')->filter();
     }
 
     /**

@@ -7,6 +7,7 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\PanicController;
 use App\Http\Controllers\RelawanShiftController;
 use App\Http\Controllers\RelawanShiftPatternController;
+use App\Http\Controllers\ShiftAutomationController;
 
 // Route publik
 Route::post('/register', [AuthController::class, 'register']);
@@ -63,25 +64,25 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/panic/{panicId}', [PanicController::class, 'destroy']);
         Route::get('/relawan-on-duty', [PanicController::class, 'getTodayRelawan']);
 
-        // Shift Management - Simplified pattern-based only
+        // ✅ Weekly Pattern Shift Management - Simple & Automatic
         Route::get('/shifts', [RelawanShiftController::class, 'index']);
-        Route::put('/shifts/{shiftId}', [RelawanShiftController::class, 'updateShift']);
-        Route::delete('/shifts/{date}', [RelawanShiftController::class, 'destroy']);
-        Route::delete('/shifts/relawan/by-name', [RelawanShiftController::class, 'destroyByRelawan']);
-        Route::delete('/shifts/relawan/by-id', [RelawanShiftController::class, 'destroyByRelawanId']);
+        Route::get('/shifts/weekly-patterns', [RelawanShiftController::class, 'getWeeklyPatterns']);
         Route::post('/shifts/generate-from-patterns', [RelawanShiftController::class, 'generateFromPatterns']);
+        Route::delete('/shifts/date/{date}', [RelawanShiftController::class, 'deleteShiftsByDate']);
         Route::get('/relawans', [RelawanShiftController::class, 'getRelawans']);
 
-        // Pattern Management - Weekly Shift Patterns
-        Route::prefix('patterns')->group(function () {
-            Route::get('/', [RelawanShiftPatternController::class, 'index']);
-            Route::post('/set-day', [RelawanShiftPatternController::class, 'setDayPattern']);
-            Route::post('/add-relawan', [RelawanShiftPatternController::class, 'addRelawanToDay']);
-            Route::delete('/remove-relawan', [RelawanShiftPatternController::class, 'removeRelawanFromDay']);
-            Route::put('/{patternId}/toggle', [RelawanShiftPatternController::class, 'togglePattern']);
-            Route::delete('/day/{dayOfWeek}', [RelawanShiftPatternController::class, 'clearDayPattern']);
-            Route::get('/day/{dayOfWeek}', [RelawanShiftPatternController::class, 'showDayPattern']);
-            Route::post('/bulk-set', [RelawanShiftPatternController::class, 'bulkSetPatterns']);
+        // ✅ Weekly Pattern Management (Monday-Sunday assignments)
+        Route::post('/shifts/set-day-pattern', [RelawanShiftController::class, 'setDayPattern']);
+        Route::post('/shifts/add-relawan-to-day', [RelawanShiftController::class, 'addRelawanToDay']);
+        Route::delete('/shifts/remove-relawan-from-day', [RelawanShiftController::class, 'removeRelawanFromDay']);
+
+        // Shift Automation Management
+        Route::prefix('automation')->group(function () {
+            Route::get('/status', [ShiftAutomationController::class, 'getStatus']);
+            Route::post('/toggle', [ShiftAutomationController::class, 'toggleAutomation']);
+            Route::post('/force-generation', [ShiftAutomationController::class, 'forceGeneration']);
+            Route::get('/logs', [ShiftAutomationController::class, 'getLogs']);
+            Route::post('/test', [ShiftAutomationController::class, 'testAutomation']);
         });
     });
 });
