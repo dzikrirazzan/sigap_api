@@ -13,37 +13,46 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        // Buat user admin
-        User::create([
-            'name' => 'Admin',
-            'email' => 'admin@gmail.com',
-            'password' => Hash::make('kikipoiu'),
-            'role' => 'admin',
-        ]);
+        // Admin utama
+        User::firstOrCreate(
+            ['email' => 'admin@gmail.com'],
+            [
+                'name' => 'Admin',
+                'password' => Hash::make('kikipoiu'),
+                'role' => 'admin',
+            ]
+        );
 
-        User::create([
-            'name' => 'Admin Dzikri',
-            'email' => 'admindzikri@gmail.com',
-            'password' => Hash::make('password'),
-            'role' => 'admin',
-        ]);
+        // Admin Dzikri
+        User::firstOrCreate(
+            ['email' => 'admindzikri@gmail.com'],
+            [
+                'name' => 'Admin Dzikri',
+                'password' => Hash::make('password'),
+                'role' => 'admin',
+            ]
+        );
 
-        // Buat user relawan
-        User::create([
-            'name' => 'Relawan Example',
-            'email' => 'relawan@gmail.com',
-            'password' => Hash::make('kikipoiu'),
-            'role' => 'relawan',
-            'nik' => '1234567890123456',
-            'no_telp' => '081234567890',
-        ]);
+        // Relawan
+        User::firstOrCreate(
+            ['email' => 'relawan@gmail.com'],
+            [
+                'name' => 'Relawan Example',
+                'password' => Hash::make('kikipoiu'),
+                'role' => 'relawan',
+                'nik' => '1234567890123456',
+                'no_telp' => '081234567890',
+            ]
+        );
 
-        // Buat user biasa
-        User::create([
-            'name' => 'User Example',
-            'email' => 'user@gmail.com',
-            'password' => Hash::make('kikipoiu'),
-            'role' => 'user',
-        ]);
+        // User biasa
+        User::firstOrCreate(
+            ['email' => 'user@gmail.com'],
+            [
+                'name' => 'User Example',
+                'password' => Hash::make('kikipoiu'),
+                'role' => 'user',
+            ]
+        );
     }
 }
