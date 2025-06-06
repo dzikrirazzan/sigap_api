@@ -29,6 +29,23 @@ class RelawanShiftPattern extends BaseModel
         'sunday' => 'Minggu',
     ];
 
+    // Mapping angka ke nama hari untuk kemudahan API
+    const DAY_NUMBERS = [
+        1 => 'monday',
+        2 => 'tuesday',
+        3 => 'wednesday',
+        4 => 'thursday',
+        5 => 'friday',
+        6 => 'saturday',
+        7 => 'sunday',
+    ];
+
+    // Helper method untuk mendapatkan day string dari number
+    public static function getDayFromNumber($dayNumber)
+    {
+        return self::DAY_NUMBERS[$dayNumber] ?? null;
+    }
+
     public function relawan()
     {
         return $this->belongsTo(User::class, 'relawan_id');

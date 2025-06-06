@@ -50,12 +50,29 @@ class RelawanShiftPatternController extends Controller
     public function setDayPattern(Request $request)
     {
         $request->validate([
-            'day_of_week' => 'required|in:' . implode(',', array_keys(RelawanShiftPattern::DAYS)),
+            'day_of_week' => 'required', // Accept both number and string
             'relawan_ids' => 'required|array|min:1|max:6',
-            'relawan_ids.*' => 'exists:users,id'
+            'relawan_ids.*' => 'integer|min:1' // Basic integer validation, we'll check relawan role manually
         ]);
 
-        $dayOfWeek = $request->day_of_week;
+        // Convert day number to day string if needed
+        $dayInput = $request->day_of_week;
+        if (is_numeric($dayInput)) {
+            $dayOfWeek = RelawanShiftPattern::getDayFromNumber($dayInput);
+            if (!$dayOfWeek) {
+                return response()->json([
+                    'message' => 'Invalid day number. Use 1-7 (1=Monday, 7=Sunday) or day names (monday, tuesday, etc.)'
+                ], 400);
+            }
+        } else {
+            $dayOfWeek = $dayInput;
+            if (!array_key_exists($dayOfWeek, RelawanShiftPattern::DAYS)) {
+                return response()->json([
+                    'message' => 'Invalid day name. Use: ' . implode(', ', array_keys(RelawanShiftPattern::DAYS))
+                ], 400);
+            }
+        }
+
         $relawanIds = $request->relawan_ids;
 
         // Cek apakah semua ID adalah relawan
@@ -97,11 +114,28 @@ class RelawanShiftPatternController extends Controller
     public function addRelawanToDay(Request $request)
     {
         $request->validate([
-            'day_of_week' => 'required|in:' . implode(',', array_keys(RelawanShiftPattern::DAYS)),
-            'relawan_id' => 'required|exists:users,id'
+            'day_of_week' => 'required',
+            'relawan_id' => 'required|integer'
         ]);
 
-        $dayOfWeek = $request->day_of_week;
+        // Convert day number to day string if needed
+        $dayInput = $request->day_of_week;
+        if (is_numeric($dayInput)) {
+            $dayOfWeek = RelawanShiftPattern::getDayFromNumber($dayInput);
+            if (!$dayOfWeek) {
+                return response()->json([
+                    'message' => 'Invalid day number. Use 1-7 (1=Monday, 7=Sunday) or day names (monday, tuesday, etc.)'
+                ], 400);
+            }
+        } else {
+            $dayOfWeek = $dayInput;
+            if (!array_key_exists($dayOfWeek, RelawanShiftPattern::DAYS)) {
+                return response()->json([
+                    'message' => 'Invalid day name. Use: ' . implode(', ', array_keys(RelawanShiftPattern::DAYS))
+                ], 400);
+            }
+        }
+
         $relawanId = $request->relawan_id;
 
         // Cek apakah user adalah relawan
@@ -141,11 +175,28 @@ class RelawanShiftPatternController extends Controller
     public function removeRelawanFromDay(Request $request)
     {
         $request->validate([
-            'day_of_week' => 'required|in:' . implode(',', array_keys(RelawanShiftPattern::DAYS)),
-            'relawan_id' => 'required|exists:users,id'
+            'day_of_week' => 'required',
+            'relawan_id' => 'required|integer'
         ]);
 
-        $dayOfWeek = $request->day_of_week;
+        // Convert day number to day string if needed
+        $dayInput = $request->day_of_week;
+        if (is_numeric($dayInput)) {
+            $dayOfWeek = RelawanShiftPattern::getDayFromNumber($dayInput);
+            if (!$dayOfWeek) {
+                return response()->json([
+                    'message' => 'Invalid day number. Use 1-7 (1=Monday, 7=Sunday) or day names (monday, tuesday, etc.)'
+                ], 400);
+            }
+        } else {
+            $dayOfWeek = $dayInput;
+            if (!array_key_exists($dayOfWeek, RelawanShiftPattern::DAYS)) {
+                return response()->json([
+                    'message' => 'Invalid day name. Use: ' . implode(', ', array_keys(RelawanShiftPattern::DAYS))
+                ], 400);
+            }
+        }
+
         $relawanId = $request->relawan_id;
 
         $pattern = RelawanShiftPattern::where('day_of_week', $dayOfWeek)
@@ -239,16 +290,33 @@ class RelawanShiftPatternController extends Controller
     {
         $request->validate([
             'patterns' => 'required|array',
-            'patterns.*.day_of_week' => 'required|in:' . implode(',', array_keys(RelawanShiftPattern::DAYS)),
+            'patterns.*.day_of_week' => 'required',
             'patterns.*.relawan_ids' => 'required|array|min:1',
-            'patterns.*.relawan_ids.*' => 'exists:users,id'
+            'patterns.*.relawan_ids.*' => 'integer|min:1'
         ]);
 
         $results = [];
         $totalCreated = 0;
 
-        foreach ($request->patterns as $dayPattern) {
-            $dayOfWeek = $dayPattern['day_of_week'];
+        foreach ($request->patterns as $index => $dayPattern) {
+            // Convert day number to day string if needed
+            $dayInput = $dayPattern['day_of_week'];
+            if (is_numeric($dayInput)) {
+                $dayOfWeek = RelawanShiftPattern::getDayFromNumber($dayInput);
+                if (!$dayOfWeek) {
+                    return response()->json([
+                        'message' => "Invalid day number in pattern {$index}. Use 1-7 (1=Monday, 7=Sunday) or day names (monday, tuesday, etc.)"
+                    ], 400);
+                }
+            } else {
+                $dayOfWeek = $dayInput;
+                if (!array_key_exists($dayOfWeek, RelawanShiftPattern::DAYS)) {
+                    return response()->json([
+                        'message' => "Invalid day name in pattern {$index}. Use: " . implode(', ', array_keys(RelawanShiftPattern::DAYS))
+                    ], 400);
+                }
+            }
+
             $relawanIds = $dayPattern['relawan_ids'];
 
             // Validasi semua relawan
