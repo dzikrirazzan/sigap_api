@@ -19,12 +19,12 @@ class ReportController extends Controller
         try {
             // Query sederhana tanpa model untuk memeriksa jika ada data
             $dbReports = DB::table('reports')->get();
-            
+
             if ($dbReports->isEmpty()) {
                 // Jika benar-benar tidak ada data di database
                 return response()->json([]);
             }
-            
+
             // Jika ada data, kita ambil dengan cara biasa
             if (auth()->user()->isAdmin() || auth()->user()->isRelawan()) {
                 // Admin dan relawan dapat melihat semua laporan
@@ -36,7 +36,7 @@ class ReportController extends Controller
                     ->latest()
                     ->get();
             }
-            
+
             // Transform data untuk frontend
             $transformedReports = [];
             foreach ($reports as $report) {
@@ -59,16 +59,15 @@ class ReportController extends Controller
                     'updated_at' => $report->updated_at->format('Y-m-d H:i:s'),
                 ];
             }
-            
+
             // Langsung kembalikan array tanpa wrapper tambahan
             return response()->json($transformedReports);
-            
         } catch (\Exception $e) {
             Log::error('Error saat mengambil laporan', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
-            
+
             return response()->json([
                 'error' => 'Terjadi kesalahan saat mengambil data laporan: ' . $e->getMessage()
             ], 500);
@@ -138,7 +137,7 @@ class ReportController extends Controller
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Terjadi kesalahan saat membuat laporan: ' . $e->getMessage(),
@@ -182,7 +181,7 @@ class ReportController extends Controller
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Terjadi kesalahan saat mengupload foto: ' . $e->getMessage(),
@@ -198,7 +197,7 @@ class ReportController extends Controller
     {
         try {
             $report = Report::with('user')->findOrFail($reportId);
-            
+
             // Periksa otorisasi
             if (!auth()->user()->isAdmin() && !auth()->user()->isRelawan() && auth()->id() !== $report->user_id) {
                 return response()->json([
@@ -206,7 +205,7 @@ class ReportController extends Controller
                     'message' => 'Tidak diizinkan melihat laporan ini'
                 ], 403);
             }
-            
+
             // Kembalikan format lama untuk kompatibilitas
             return response()->json([
                 'success' => true,
@@ -234,7 +233,7 @@ class ReportController extends Controller
                 'report_id' => $reportId,
                 'error' => $e->getMessage()
             ]);
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Terjadi kesalahan saat melihat laporan: ' . $e->getMessage(),
@@ -250,7 +249,7 @@ class ReportController extends Controller
     {
         try {
             $report = Report::findOrFail($reportId);
-            
+
             // Periksa otorisasi
             if (auth()->user()->isAdmin() || auth()->user()->isRelawan()) {
                 // Admin dan relawan dapat memperbarui status dan catatan
@@ -258,7 +257,7 @@ class ReportController extends Controller
                     'status' => 'sometimes|required|in:pending,in_progress,resolved,rejected',
                     'admin_notes' => 'sometimes|nullable|string|max:1000',
                 ]);
-                
+
                 if ($validator->fails()) {
                     return response()->json([
                         'success' => false,
@@ -266,9 +265,8 @@ class ReportController extends Controller
                         'errors' => $validator->errors()
                     ], 422);
                 }
-                
+
                 $report->update($validator->validated());
-                
             } elseif (auth()->id() === $report->user_id && $report->status === 'pending') {
                 // Pengguna hanya dapat memperbarui laporan mereka sendiri yang masih pending
                 $validator = Validator::make($request->all(), [
@@ -277,7 +275,7 @@ class ReportController extends Controller
                     'description' => 'sometimes|required|string|max:1000',
                     'photo_path' => 'sometimes|required|string',
                 ]);
-                
+
                 if ($validator->fails()) {
                     return response()->json([
                         'success' => false,
@@ -285,16 +283,15 @@ class ReportController extends Controller
                         'errors' => $validator->errors()
                     ], 422);
                 }
-                
+
                 $validatedData = $validator->validated();
-                
+
                 // Pastikan problem_type tidak null
                 if (isset($validatedData['problem_type']) && $validatedData['problem_type'] === null) {
                     $validatedData['problem_type'] = '';
                 }
-                
+
                 $report->update($validatedData);
-                
             } else {
                 return response()->json([
                     'success' => false,
@@ -333,7 +330,7 @@ class ReportController extends Controller
                 'report_id' => $reportId,
                 'error' => $e->getMessage()
             ]);
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Terjadi kesalahan saat memperbarui laporan: ' . $e->getMessage(),
@@ -349,7 +346,7 @@ class ReportController extends Controller
     {
         try {
             $report = Report::findOrFail($reportId);
-            
+
             // Periksa otorisasi
             if (!auth()->user()->isAdmin() && !(auth()->id() === $report->user_id && $report->status === 'pending')) {
                 return response()->json([
@@ -362,9 +359,9 @@ class ReportController extends Controller
             if ($report->photo_path) {
                 Storage::disk('public')->delete($report->photo_path);
             }
-            
+
             $report->delete();
-            
+
             // Kembalikan format lama untuk kompatibilitas
             return response()->json([
                 'success' => true,
@@ -376,7 +373,7 @@ class ReportController extends Controller
                 'report_id' => $reportId,
                 'error' => $e->getMessage()
             ]);
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Terjadi kesalahan saat menghapus laporan: ' . $e->getMessage(),
@@ -384,7 +381,7 @@ class ReportController extends Controller
             ], $e instanceof \Illuminate\Database\Eloquent\ModelNotFoundException ? 404 : 500);
         }
     }
-    
+
     /**
      * Mendapatkan daftar tipe masalah (untuk dropdown)
      */
@@ -402,7 +399,7 @@ class ReportController extends Controller
                 'environmental' => 'Lingkungan',
                 'other' => 'Lainnya'
             ];
-            
+
             // Kembalikan format lama untuk kompatibilitas
             return response()->json([
                 'success' => true,
@@ -412,7 +409,7 @@ class ReportController extends Controller
             Log::error('Error saat mengambil tipe masalah', [
                 'error' => $e->getMessage()
             ]);
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Terjadi kesalahan saat mengambil daftar tipe masalah',
