@@ -14,7 +14,6 @@
             <!-- Header -->
             <div style="background: #dc2626; color: white; padding: 30px; text-align: center;">
                 <h1 style="margin: 0; font-size: 24px; font-weight: 600;">PANIC ALERT</h1>
-                <p style="margin: 8px 0 0 0; opacity: 0.9;">Laporan Darurat Baru</p>
             </div>
 
             <!-- Content -->
@@ -30,41 +29,35 @@
 
                 <!-- Report Info -->
                 <div
-                    style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 6px; padding: 20px; margin: 20px 0;">
-                    <h3 style="margin: 0 0 15px 0; color: #856404; font-size: 16px; font-weight: 600;">Detail Laporan
-                    </h3>
-                    <table style="width: 100%; border-collapse: collapse;">
-                        <tr>
-                            <td style="padding: 8px 0; color: #666; font-weight: 500;">ID Laporan:</td>
-                            <td style="padding: 8px 0; font-weight: 600;">#{{ $panic->id }}</td>
-                        </tr>
-                        <tr>
-                            <td style="padding: 8px 0; color: #666; font-weight: 500;">Pelapor:</td>
-                            <td style="padding: 8px 0;">{{ $panic->user->name }}</td>
-                        </tr>
-                        <tr>
-                            <td style="padding: 8px 0; color: #666; font-weight: 500;">Kontak:</td>
-                            <td style="padding: 8px 0;">{{ $panic->user->no_telp ?? 'Tidak tersedia' }}</td>
-                        </tr>
-                        <tr>
-                            <td style="padding: 8px 0; color: #666; font-weight: 500;">Waktu:</td>
-                            <td style="padding: 8px 0;">{{ $panic->created_at->format('d/m/Y H:i') }} WIB</td>
-                        </tr>
-                    </table>
+                    style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 6px; padding: 20px; margin: 20px 0;">
+                    <h3 style="margin: 0 0 15px 0; color: #333; font-size: 16px; font-weight: 600;">Detail Laporan</h3>
+
+                    <div style="margin-bottom: 20px;">
+                        <p style="margin: 5px 0; font-size: 14px;"><strong>ID Laporan:</strong> #{{ $panic->id }}</p>
+                        <p style="margin: 5px 0; font-size: 14px;"><strong>Pelapor:</strong> {{ $panic->user->name }}
+                        </p>
+                        <p style="margin: 5px 0; font-size: 14px;"><strong>Kontak:</strong>
+                            {{ $panic->user->no_telp ?? 'Tidak tersedia' }}
+                        </p>
+                        <p style="margin: 5px 0; font-size: 14px;"><strong>Waktu:</strong>
+                            {{ $panic->created_at->format('d/m/Y H:i') }} WIB
+                        </p>
+                    </div>
+
+                    <div style="border-top: 1px solid #dee2e6; padding-top: 15px;">
+                        <p style="margin: 0 0 10px 0; font-weight: 600; color: #333;">📍 Lokasi</p>
+                        <a href="https://www.google.com/maps?q={{ $panic->latitude }},{{ $panic->longitude }}"
+                            style="display: inline-block; background: #007bff; color: white; padding: 12px 20px; text-decoration: none; border-radius: 4px; font-weight: 500; font-size: 14px;">
+                            Lihat Lokasi di Maps
+                        </a>
+                    </div>
                 </div>
 
-                <!-- Location -->
-                <div
-                    style="background: #d1ecf1; border: 1px solid #bee5eb; border-radius: 6px; padding: 20px; margin: 20px 0;">
-                    <h3 style="margin: 0 0 15px 0; color: #0c5460; font-size: 16px; font-weight: 600;">📍 Lokasi</h3>
-                    <p
-                        style="margin: 0 0 15px 0; font-family: monospace; background: white; padding: 10px; border-radius: 4px; border: 1px solid #bee5eb;">
-                        Lat: {{ $panic->latitude }}<br>
-                        Lng: {{ $panic->longitude }}
-                    </p>
-                    <a href="https://www.google.com/maps?q={{ $panic->latitude }},{{ $panic->longitude }}"
-                        style="display: inline-block; background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; font-weight: 500;">
-                        Lihat di Maps
+                <!-- Action Button -->
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="https://sigapundip.xyz/auth/login"
+                        style="display: inline-block; background: #28a745; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 16px;">
+                        Akses Dashboard Relawan
                     </a>
                 </div>
 
