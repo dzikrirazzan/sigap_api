@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
+use Illuminate\Auth\Events\Registered;
 
 class AuthController extends Controller
 {
@@ -25,16 +26,16 @@ class AuthController extends Controller
     }
 
     /**
-     * Register untuk user umum (public)
+     * Register untuk user umum (public) - dengan email verification
      */
     public function register(Request $request)
     {
         $fields = $request->validate([
             'name' => 'required|string',
-            'email' => 'required|string|unique:users,email',
+            'email' => 'required|string|email|unique:users,email',
             'password' => 'required|string|min:6',
             'no_telp' => 'required|string|max:15',
-            'nim' => 'nullable|string|max:20',
+            'nim' => 'nullable|string|max:25',
             'jurusan' => 'nullable|string|max:100',
         ]);
 
@@ -48,16 +49,13 @@ class AuthController extends Controller
             'jurusan' => $fields['jurusan'] ?? null,
         ]);
 
-        $token = $user->createToken('access_token')->plainTextToken;
-
-        $refreshToken = $user->createRefreshToken();
+        // Trigger email verification
+        event(new Registered($user));
 
         $response = [
+            'message' => 'Registration successful. Please check your email to verify your account.',
             'user' => $user,
-            'access_token' => $token,
-            'token_type' => 'Bearer',
-            'expires_in' => config('sanctum.expiration') * 60,
-            'refresh_token' => $refreshToken->token,
+            'email_verification_required' => true,
         ];
 
         return response($response, 201);
@@ -133,29 +131,40 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $fields = $request->validate([
-            'email' => 'required|string',
-            'password' => 'required|string',
+            'email' => 'required|string|email',
+            'password' => 'required|string'
         ]);
 
+        // Check user credentials
         $user = User::where('email', $fields['email'])->first();
 
         if (!$user || !Hash::check($fields['password'], $user->password)) {
-            return response([
-                'message' => 'Invalid Password or Email',
-            ], 401);
+            return response()->json(['message' => 'Invalid credentials'], 401);
         }
 
+        // Check if email is verified (only for regular users, not admin/relawan)
+        if ($user->role === User::ROLE_USER && !$user->hasVerifiedEmail()) {
+            return response()->json([
+                'message' => 'Please verify your email address first.',
+                'email_verification_required' => true,
+                'user_id' => $user->id
+            ], 403);
+        }
+
+        // Delete old tokens
         $user->tokens()->delete();
 
+        // Create new token
         $token = $user->createToken('access_token')->plainTextToken;
 
+        // Create refresh token
         $refreshToken = $user->createRefreshToken();
 
         $response = [
             'user' => $user,
             'access_token' => $token,
             'token_type' => 'Bearer',
-            'expires_in' => config('sanctum.expiration') * 60, // dalam detik
+            'expires_in' => config('sanctum.expiration') * 60,
             'refresh_token' => $refreshToken->token,
         ];
 
@@ -369,5 +378,67 @@ class AuthController extends Controller
         $users = User::where('role', User::ROLE_USER)->latest()->get();
 
         return response()->json($users);
+    }
+
+    /**
+     * Verify email address
+     */
+    public function verifyEmail(Request $request)
+    {
+        $request->validate([
+            'id' => 'required|integer',
+            'hash' => 'required|string',
+        ]);
+
+        $user = User::findOrFail($request->id);
+
+        if (!hash_equals((string) $request->hash, sha1($user->getEmailForVerification()))) {
+            return response()->json(['message' => 'Invalid verification link'], 400);
+        }
+
+        if ($user->hasVerifiedEmail()) {
+            return response()->json(['message' => 'Email already verified'], 200);
+        }
+
+        if ($user->markEmailAsVerified()) {
+            // Auto-login after verification
+            $token = $user->createToken('access_token')->plainTextToken;
+            $refreshToken = $user->createRefreshToken();
+
+            return response()->json([
+                'message' => 'Email verified successfully',
+                'user' => $user,
+                'access_token' => $token,
+                'token_type' => 'Bearer',
+                'expires_in' => config('sanctum.expiration') * 60,
+                'refresh_token' => $refreshToken->token,
+            ], 200);
+        }
+
+        return response()->json(['message' => 'Verification failed'], 400);
+    }
+
+    /**
+     * Resend verification email
+     */
+    public function resendVerificationEmail(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email'
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user) {
+            return response()->json(['message' => 'User not found'], 404);
+        }
+
+        if ($user->hasVerifiedEmail()) {
+            return response()->json(['message' => 'Email already verified'], 200);
+        }
+
+        $user->sendEmailVerificationNotification();
+
+        return response()->json(['message' => 'Verification email sent'], 200);
     }
 }

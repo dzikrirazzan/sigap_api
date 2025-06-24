@@ -7,10 +7,21 @@ use App\Models\PanicReport;
 use App\Models\User;
 use App\Models\RelawanShift;
 use App\Models\RelawanShiftPattern;
+use App\Services\EmergencyEmailService;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\EmergencyAlert;
 use Carbon\Carbon;
 
 class PanicController extends Controller
 {
+    protected $emergencyEmailService;
+
+    public function __construct(EmergencyEmailService $emergencyEmailService)
+    {
+        $this->emergencyEmailService = $emergencyEmailService;
+    }
+
     // User tekan panic button - langsung ke relawan yang sedang jaga
     public function store(Request $request)
     {
@@ -60,6 +71,17 @@ class PanicController extends Controller
 
         // Load relasi user
         $panic->load('user');
+
+        // Send emergency email notifications to on-duty relawan
+        try {
+            $this->emergencyEmailService->sendEmergencyAlert($panic);
+        } catch (\Exception $e) {
+            // Log error but don't fail the panic report creation
+            Log::error('Failed to send emergency email notifications', [
+                'panic_id' => $panic->id,
+                'error' => $e->getMessage()
+            ]);
+        }
 
         return response()->json([
             'success' => true,
@@ -160,6 +182,7 @@ class PanicController extends Controller
         }
 
         $panic = PanicReport::findOrFail($panicId);
+        $oldStatus = $panic->status; // Save old status for email notification
 
         // Logic berdasarkan status yang diminta
         if ($newStatus === 'handling') {
@@ -224,6 +247,8 @@ class PanicController extends Controller
             $message = 'Panic report cancelled by admin';
         }
 
+        // Status update completed - no email notification needed
+        
         $panic->load(['user:id,name,email,no_telp,nik', 'handler:id,name']);
 
         return response()->json([
@@ -532,5 +557,81 @@ class PanicController extends Controller
             ->exists();
 
         return $hasPatternForToday;
+    }
+
+    /**
+     * Test emergency email notification (Admin only)
+     */
+    public function testEmergencyEmail(Request $request)
+    {
+        $user = auth()->user();
+
+        if ($user->role !== 'admin') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Only admin can test emergency notifications'
+            ], 403);
+        }
+
+        $request->validate([
+            'test_email' => 'nullable|email',
+        ]);
+
+        try {
+            // Create a fake panic report for testing
+            $testPanic = new PanicReport([
+                'id' => 999999,
+                'user_id' => $user->id,
+                'latitude' => -7.2575,
+                'longitude' => 110.8378,
+                'description' => 'Test emergency alert - ini adalah simulasi untuk menguji sistem notifikasi email.',
+                'status' => PanicReport::STATUS_PENDING,
+                'created_at' => now(),
+            ]);
+
+            // Set fake user relation
+            $testPanic->setRelation('user', $user);
+
+            if ($request->test_email) {
+                // Send to specific email
+                $testRelawan = (object) [
+                    'id' => 999999,
+                    'name' => 'Test Relawan',
+                    'email' => $request->test_email
+                ];
+
+                Mail::to($testRelawan->email)
+                    ->send(new EmergencyAlert($testPanic, $testRelawan));
+
+                return response()->json([
+                    'success' => true,
+                    'message' => "Test emergency email sent to {$request->test_email}",
+                    'test_data' => [
+                        'panic_id' => $testPanic->id,
+                        'recipient' => $testRelawan->email,
+                        'sent_at' => now()->toISOString()
+                    ]
+                ]);
+            } else {
+                // Send to all on-duty relawan
+                $result = $this->emergencyEmailService->sendEmergencyAlert($testPanic);
+
+                return response()->json([
+                    'success' => $result,
+                    'message' => $result ? 'Test emergency emails sent to on-duty relawan' : 'Failed to send test emails',
+                    'test_data' => [
+                        'panic_id' => $testPanic->id,
+                        'sent_at' => now()->toISOString()
+                    ]
+                ]);
+            }
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to send test emergency email',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 }

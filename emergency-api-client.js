@@ -125,6 +125,22 @@ class EmergencyAPIClient {
     }
   }
 
+  // Email Verification Functions
+  async resendVerificationEmail(email) {
+    try {
+      const response = await this.request("POST", "/email/resend", { email });
+      return response;
+    } catch (error) {
+      console.error("Resend verification email error:", error);
+      throw error;
+    }
+  }
+
+  // Helper function to check if user needs email verification
+  isEmailVerificationRequired(loginResponse) {
+    return loginResponse.email_verification_required === true;
+  }
+
   // Browser Notifications
   async requestNotificationPermission() {
     if ("Notification" in window) {

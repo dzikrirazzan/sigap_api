@@ -14,6 +14,10 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login'])->name('api.login');
 Route::post('/refresh', [AuthController::class, 'refreshToken']);
 
+// Email Verification Routes
+Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])->name('verification.verify');
+Route::post('/email/resend', [AuthController::class, 'resendVerificationEmail'])->name('verification.resend');
+
 // Route terproteksi (untuk semua user terautentikasi)
 Route::middleware('auth:sanctum')->group(function () {
     // Profil user yang login
@@ -63,6 +67,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/panic', [PanicController::class, 'adminIndex']);
         Route::delete('/panic/{panicId}', [PanicController::class, 'destroy']);
         Route::get('/relawan-on-duty', [PanicController::class, 'getTodayRelawan']);
+        Route::post('/test-emergency-email', [PanicController::class, 'testEmergencyEmail']);
 
         // ✅ Weekly Pattern Shift Management - Simple & Automatic
         Route::get('/shifts', [RelawanShiftController::class, 'index']);
