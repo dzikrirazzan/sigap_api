@@ -390,32 +390,32 @@ class AuthController extends Controller
             'hash' => 'required|string',
         ]);
 
-        $user = User::findOrFail($request->id);
+        try {
+            $user = User::findOrFail($request->id);
+        } catch (\Exception $e) {
+            $frontendUrl = 'https://sigapundip.xyz/auth/verification-failed?error=user_not_found';
+            return redirect($frontendUrl);
+        }
 
         if (!hash_equals((string) $request->hash, sha1($user->getEmailForVerification()))) {
-            return response()->json(['message' => 'Invalid verification link'], 400);
+            $frontendUrl = 'https://sigapundip.xyz/auth/verification-failed?error=invalid_link';
+            return redirect($frontendUrl);
         }
 
         if ($user->hasVerifiedEmail()) {
-            return response()->json(['message' => 'Email already verified'], 200);
+            $frontendUrl = 'https://sigapundip.xyz/auth/verification-success?verified=true&already_verified=true&email=' . urlencode($user->email);
+            return redirect($frontendUrl);
         }
 
         if ($user->markEmailAsVerified()) {
-            // Auto-login after verification
-            $token = $user->createToken('access_token')->plainTextToken;
-            $refreshToken = $user->createRefreshToken();
-
-            return response()->json([
-                'message' => 'Email verified successfully',
-                'user' => $user,
-                'access_token' => $token,
-                'token_type' => 'Bearer',
-                'expires_in' => config('sanctum.expiration') * 60,
-                'refresh_token' => $refreshToken->token,
-            ], 200);
+            // Redirect to frontend with success status
+            $frontendUrl = 'https://sigapundip.xyz/auth/verification-success?verified=true&email=' . urlencode($user->email);
+            return redirect($frontendUrl);
         }
 
-        return response()->json(['message' => 'Verification failed'], 400);
+        // Redirect to frontend with error status
+        $frontendUrl = 'https://sigapundip.xyz/auth/verification-failed?error=verification_failed';
+        return redirect($frontendUrl);
     }
 
     /**

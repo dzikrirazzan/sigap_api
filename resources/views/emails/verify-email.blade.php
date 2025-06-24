@@ -37,8 +37,10 @@
                 <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
 
                 <p style="margin: 0; color: #999; font-size: 12px; line-height: 1.4;">
-                    Jika Anda mengalami kesulitan mengklik tombol "Verifikasi Email", salin dan tempel URL di bawah ini ke browser web Anda:<br>
-                    <a href="{{ $verificationUrl }}" style="color: #007bff; word-break: break-all;">{{ $verificationUrl }}</a>
+                    Jika Anda mengalami kesulitan mengklik tombol "Verifikasi Email", salin dan tempel URL di bawah ini
+                    ke browser web Anda:<br>
+                    <a href="{{ $verificationUrl }}"
+                        style="color: #007bff; word-break: break-all;">{{ $verificationUrl }}</a>
                 </p>
 
             </div>
