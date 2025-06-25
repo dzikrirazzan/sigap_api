@@ -190,8 +190,7 @@ class WhatsAppService
         $message .= "📋 *Detail Laporan:*\n";
         $message .= "• Waktu: {$timestamp} WIB\n";
         $message .= "• Pelapor: {$reporterName}\n";
-        $message .= "• Kontak: {$reporterPhone}\n";
-        $message = "*Link Akses Dashboard Relawan:* www.sigapundip.xyz\n\n";
+        $message .= "• Kontak: {$reporterPhone}\n\n";
 
         if ($panicReport->deskripsi) {
             $message .= "• Deskripsi: {$panicReport->deskripsi}\n";
@@ -202,8 +201,8 @@ class WhatsAppService
             $message .= "• Maps: https://maps.google.com/?q={$panicReport->latitude},{$panicReport->longitude}\n";
         }
 
+        $message .= "\n🔗 *Link Akses Dashboard Relawan:* https://www.sigapundip.xyz\n\n";
         $message .= "_Pesan otomatis dari Sistem SIGAP UNDIP_";
-
         return $message;
     }
 
