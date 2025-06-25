@@ -17,32 +17,33 @@
                 </p>
 
                 <p style="margin-bottom: 30px;">
-                    Terima kasih telah mendaftar di SIGAP UNDIP. Untuk mengaktifkan akun Anda, silakan klik tombol
-                    verifikasi di bawah ini.
+                    Terima kasih telah mendaftar di SIGAP UNDIP. Gunakan kode verifikasi di bawah ini untuk mengaktifkan
+                    akun Anda:
                 </p>
 
-                <!-- Verification Button -->
+                <!-- OTP Code Box -->
                 <div style="text-align: center; margin: 30px 0;">
-                    <a href="{{ $verificationUrl }}"
-                        style="display: inline-block; background: #007bff; color: white; padding: 15px 30px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 16px;">
-                        Verifikasi Email
-                    </a>
+                    <div
+                        style="display: inline-block; background: #f8f9fa; border: 2px dashed #007bff; padding: 20px 40px; border-radius: 8px;">
+                        <h2
+                            style="margin: 0; font-size: 32px; font-weight: bold; color: #007bff; letter-spacing: 8px; font-family: 'Courier New', monospace;">
+                            {{ $otp }}
+                        </h2>
+                    </div>
                 </div>
 
-                <p style="margin: 20px 0; color: #666; font-size: 14px;">
-                    <strong>Penting:</strong> Link verifikasi ini akan kedaluwarsa dalam 60 menit.
-                    Jika Anda tidak membuat akun ini, silakan abaikan email ini.
+                <p style="margin: 20px 0; color: #666; font-size: 14px; text-align: center;">
+                    <strong>Penting:</strong> Kode verifikasi ini akan kedaluwarsa dalam 10 menit.<br>
+                    Jangan bagikan kode ini kepada siapa pun.
                 </p>
 
-                <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-
-                <p style="margin: 0; color: #999; font-size: 12px; line-height: 1.4;">
-                    Jika Anda mengalami kesulitan mengklik tombol "Verifikasi Email", salin dan tempel URL di bawah ini
-                    ke browser web Anda:<br>
-                    <a href="{{ $verificationUrl }}"
-                        style="color: #007bff; word-break: break-all;">{{ $verificationUrl }}</a>
-                </p>
-
+                <div
+                    style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 6px; padding: 15px; margin: 20px 0;">
+                    <p style="margin: 0; color: #856404; font-size: 14px;">
+                        <strong>Peringatan:</strong> Jika Anda tidak membuat akun ini, silakan abaikan email ini dan
+                        hubungi administrator.
+                    </p>
+                </div>
             </div>
 
             <!-- Footer -->

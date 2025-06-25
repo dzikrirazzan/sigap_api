@@ -6,10 +6,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
-use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Support\Str;
 
-class User extends Authenticatable implements MustVerifyEmail
+class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
@@ -129,13 +128,5 @@ class User extends Authenticatable implements MustVerifyEmail
     public function shiftPatterns()
     {
         return $this->hasMany(\App\Models\RelawanShiftPattern::class, 'relawan_id');
-    }
-
-    /**
-     * Send the email verification notification using custom notification.
-     */
-    public function sendEmailVerificationNotification()
-    {
-        $this->notify(new \App\Notifications\CustomVerifyEmail);
     }
 }

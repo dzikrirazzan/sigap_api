@@ -4,11 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\RefreshToken;
+use App\Services\EmailOtpService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
-use Illuminate\Auth\Events\Registered;
 
 class AuthController extends Controller
 {
@@ -49,11 +49,20 @@ class AuthController extends Controller
             'jurusan' => $fields['jurusan'] ?? null,
         ]);
 
-        // Trigger email verification
-        event(new Registered($user));
+        // Send OTP for email verification
+        $otpService = new \App\Services\EmailOtpService();
+        $otpSent = $otpService->sendEmailVerificationOtp($user->email);
+
+        if (!$otpSent) {
+            return response()->json([
+                'message' => 'Registration successful but failed to send verification email. Please try to resend OTP.',
+                'user' => $user,
+                'email_verification_required' => true,
+            ], 201);
+        }
 
         $response = [
-            'message' => 'Registration successful. Please check your email to verify your account.',
+            'message' => 'Registration successful. Please check your email for the verification code.',
             'user' => $user,
             'email_verification_required' => true,
         ];
@@ -381,47 +390,9 @@ class AuthController extends Controller
     }
 
     /**
-     * Verify email address
+     * Send OTP for email verification
      */
-    public function verifyEmail(Request $request)
-    {
-        $request->validate([
-            'id' => 'required|integer',
-            'hash' => 'required|string',
-        ]);
-
-        try {
-            $user = User::findOrFail($request->id);
-        } catch (\Exception $e) {
-            $frontendUrl = 'https://sigapundip.xyz/auth/verification-failed?error=user_not_found';
-            return redirect($frontendUrl);
-        }
-
-        if (!hash_equals((string) $request->hash, sha1($user->getEmailForVerification()))) {
-            $frontendUrl = 'https://sigapundip.xyz/auth/verification-failed?error=invalid_link';
-            return redirect($frontendUrl);
-        }
-
-        if ($user->hasVerifiedEmail()) {
-            $frontendUrl = 'https://sigapundip.xyz/auth/verification-success?verified=true&already_verified=true&email=' . urlencode($user->email);
-            return redirect($frontendUrl);
-        }
-
-        if ($user->markEmailAsVerified()) {
-            // Redirect to frontend with success status
-            $frontendUrl = 'https://sigapundip.xyz/auth/verification-success?verified=true&email=' . urlencode($user->email);
-            return redirect($frontendUrl);
-        }
-
-        // Redirect to frontend with error status
-        $frontendUrl = 'https://sigapundip.xyz/auth/verification-failed?error=verification_failed';
-        return redirect($frontendUrl);
-    }
-
-    /**
-     * Resend verification email
-     */
-    public function resendVerificationEmail(Request $request)
+    public function sendEmailVerificationOtp(Request $request)
     {
         $request->validate([
             'email' => 'required|email'
@@ -437,8 +408,64 @@ class AuthController extends Controller
             return response()->json(['message' => 'Email already verified'], 200);
         }
 
-        $user->sendEmailVerificationNotification();
+        $otpService = new EmailOtpService();
+        $otpSent = $otpService->sendEmailVerificationOtp($user->email);
 
-        return response()->json(['message' => 'Verification email sent'], 200);
+        if (!$otpSent) {
+            return response()->json(['message' => 'Failed to send OTP email'], 500);
+        }
+
+        return response()->json(['message' => 'OTP sent successfully'], 200);
+    }
+
+    /**
+     * Verify OTP and mark email as verified
+     */
+    public function verifyEmailOtp(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'otp' => 'required|string|size:6'
+        ]);
+
+        $otpService = new EmailOtpService();
+        $result = $otpService->verifyEmailOtp($request->email, $request->otp);
+
+        if (!$result['success']) {
+            return response()->json([
+                'message' => $result['message']
+            ], 400);
+        }
+
+        return response()->json($result, 200);
+    }
+
+    /**
+     * Resend OTP for email verification
+     */
+    public function resendEmailVerificationOtp(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email'
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user) {
+            return response()->json(['message' => 'User not found'], 404);
+        }
+
+        if ($user->hasVerifiedEmail()) {
+            return response()->json(['message' => 'Email already verified'], 200);
+        }
+
+        $otpService = new EmailOtpService();
+        $otpSent = $otpService->sendEmailVerificationOtp($user->email);
+
+        if (!$otpSent) {
+            return response()->json(['message' => 'Failed to send OTP email'], 500);
+        }
+
+        return response()->json(['message' => 'OTP resent successfully'], 200);
     }
 }

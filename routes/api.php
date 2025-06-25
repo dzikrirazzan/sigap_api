@@ -14,9 +14,10 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login'])->name('api.login');
 Route::post('/refresh', [AuthController::class, 'refreshToken']);
 
-// Email Verification Routes
-Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])->name('verification.verify');
-Route::post('/email/resend', [AuthController::class, 'resendVerificationEmail'])->name('verification.resend');
+// Email OTP Verification Routes
+Route::post('/email/send-otp', [AuthController::class, 'sendEmailVerificationOtp']);
+Route::post('/email/verify-otp', [AuthController::class, 'verifyEmailOtp']);
+Route::post('/email/resend-otp', [AuthController::class, 'resendEmailVerificationOtp']);
 
 // Route terproteksi (untuk semua user terautentikasi)
 Route::middleware('auth:sanctum')->group(function () {
