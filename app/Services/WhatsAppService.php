@@ -185,7 +185,7 @@ class WhatsAppService
         $reporterName = $panicReport->user->name ?? 'Unknown';
         $reporterPhone = $panicReport->user->no_telp ?? 'Not provided';
 
-        $message = "*EMERGENCY ALERT - SIGAP UNDIP*\n\n";
+        $message = "*PANIC ALERT - SIGAP UNDIP*\n\n";
         $message .= "Halo {name}! Ada laporan darurat yang memerlukan perhatian:\n\n";
         $message .= "📋 *Detail Laporan:*\n";
         $message .= "• Waktu: {$timestamp} WIB\n";
