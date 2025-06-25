@@ -15,9 +15,9 @@ class Kernel extends ConsoleKernel
         // Auto-generate shift setiap hari jam 2 pagi
         // Generate 7 hari ke depan berdasarkan weekly pattern
         $schedule->command('shifts:auto-generate --days=7')
-                 ->dailyAt('02:00')
-                 ->withoutOverlapping()
-                 ->appendOutputTo(storage_path('logs/auto-shift-generation.log'));
+            ->dailyAt('02:00')
+            ->withoutOverlapping()
+            ->appendOutputTo(storage_path('logs/auto-shift-generation.log'));
 
         // Cleanup log file setiap minggu (agar tidak terlalu besar)
         $schedule->call(function () {
@@ -33,7 +33,7 @@ class Kernel extends ConsoleKernel
      */
     protected function commands(): void
     {
-        $this->load(__DIR__.'/Commands');
+        $this->load(__DIR__ . '/Commands');
 
         require base_path('routes/console.php');
     }

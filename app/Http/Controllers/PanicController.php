@@ -7,19 +7,17 @@ use App\Models\PanicReport;
 use App\Models\User;
 use App\Models\RelawanShift;
 use App\Models\RelawanShiftPattern;
-use App\Services\EmergencyEmailService;
+use App\Services\WhatsAppService;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
-use App\Mail\EmergencyAlert;
 use Carbon\Carbon;
 
 class PanicController extends Controller
 {
-    protected $emergencyEmailService;
+    protected $whatsAppService;
 
-    public function __construct(EmergencyEmailService $emergencyEmailService)
+    public function __construct(WhatsAppService $whatsAppService)
     {
-        $this->emergencyEmailService = $emergencyEmailService;
+        $this->whatsAppService = $whatsAppService;
     }
 
     // User tekan panic button - langsung ke relawan yang sedang jaga
@@ -72,12 +70,24 @@ class PanicController extends Controller
         // Load relasi user
         $panic->load('user');
 
-        // Send emergency email notifications to on-duty relawan
+        // Send emergency WhatsApp notifications to on-duty relawan
         try {
-            $this->emergencyEmailService->sendEmergencyAlert($panic);
+            $result = $this->whatsAppService->sendEmergencyAlert($panic, $onDutyRelawans);
+            
+            if (!$result['success']) {
+                Log::warning('WhatsApp notification failed but panic report created', [
+                    'panic_id' => $panic->id,
+                    'error' => $result['message']
+                ]);
+            } else {
+                Log::info('Emergency WhatsApp alert sent successfully', [
+                    'panic_id' => $panic->id,
+                    'volunteers_count' => $onDutyRelawans->count()
+                ]);
+            }
         } catch (\Exception $e) {
             // Log error but don't fail the panic report creation
-            Log::error('Failed to send emergency email notifications', [
+            Log::error('Failed to send emergency WhatsApp notifications', [
                 'panic_id' => $panic->id,
                 'error' => $e->getMessage()
             ]);
@@ -86,7 +96,7 @@ class PanicController extends Controller
         return response()->json([
             'success' => true,
             'panic' => $panic,
-            'message' => 'Emergency alert sent! Responders on duty have been notified.',
+            'message' => 'Emergency alert sent via WhatsApp! Responders on duty have been notified.',
             'assigned_relawan' => $onDutyRelawans->map(function ($relawan) {
                 return [
                     'id' => $relawan->id,
@@ -94,7 +104,8 @@ class PanicController extends Controller
                     'phone' => $relawan->no_telp
                 ];
             }),
-            'total_responders' => $onDutyRelawans->count()
+            'total_responders' => $onDutyRelawans->count(),
+            'notification_method' => 'WhatsApp via Fonnte'
         ]);
     }
 

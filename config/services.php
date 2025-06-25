@@ -31,4 +31,9 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'fonnte' => [
+        'token' => env('FONNTE_TOKEN', 'tgX3Wbv4zgGaVSDU749z'),
+        'base_url' => env('FONNTE_BASE_URL', 'https://api.fonnte.com'),
+    ],
+
 ];

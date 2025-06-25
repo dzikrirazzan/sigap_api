@@ -43,6 +43,7 @@ class UserSeeder extends Seeder
                 'nik' => '1234567890123456',
                 'no_telp' => '081234567890',
             ]
+
         );
 
         // User biasa
