@@ -110,48 +110,65 @@ print_status "Building and starting Docker containers..."
 docker-compose -f $DOCKER_COMPOSE_FILE up -d --build
 
 # 11. Wait for database to be ready
-print_status "Waiting for database to be ready..."
+print_status "Waiting for containers to be fully ready..."
 sleep 30
+
+# Wait for app container to be ready
+print_status "Waiting for Laravel container..."
+until docker-compose exec -T app php --version > /dev/null 2>&1; do
+    echo "Waiting for Laravel container to be ready..."
+    sleep 5
+done
 
 # 12. Fix permissions before Laravel setup
 print_status "Fixing file permissions for Laravel..."
-docker-compose exec -T --user root app chown -R www-data:www-data /var/www
-docker-compose exec -T --user root app chmod 664 /var/www/.env
-docker-compose exec -T --user root app chmod -R 775 /var/www/storage
-docker-compose exec -T --user root app chmod -R 775 /var/www/bootstrap/cache
-docker-compose exec -T --user root app touch /var/www/storage/logs/laravel.log
-docker-compose exec -T --user root app chown www-data:www-data /var/www/storage/logs/laravel.log
+docker-compose exec -T --user root app sh -c "
+    chown -R www-data:www-data /var/www && \
+    chmod 664 /var/www/.env && \
+    chmod -R 775 /var/www/storage && \
+    chmod -R 775 /var/www/bootstrap/cache && \
+    touch /var/www/storage/logs/laravel.log && \
+    chown www-data:www-data /var/www/storage/logs/laravel.log
+"
 
 # 13. Run Laravel setup commands
 print_status "Running Laravel setup commands..."
 
-# Install/update composer dependencies (if needed)
-docker-compose exec -T app composer install --no-dev --optimize-autoloader --no-interaction 2>/dev/null || true
-
-# Generate application key if not set
-docker-compose exec -T app php artisan key:generate --force
+# Generate application key
+print_status "Generating APP_KEY..."
+docker-compose exec -T app php artisan key:generate --force --no-ansi
 
 # Run database migrations
-docker-compose exec -T app php artisan migrate --force
+print_status "Running database migrations..."
+docker-compose exec -T app php artisan migrate --force --no-ansi
 
 # Clear and cache configurations
-docker-compose exec -T app php artisan config:clear
-docker-compose exec -T app php artisan cache:clear
-docker-compose exec -T app php artisan config:cache
-docker-compose exec -T app php artisan route:cache
+print_status "Clearing and caching configurations..."
+docker-compose exec -T app php artisan config:clear --no-ansi
+docker-compose exec -T app php artisan cache:clear --no-ansi
+docker-compose exec -T app php artisan config:cache --no-ansi
+docker-compose exec -T app php artisan route:cache --no-ansi
 
-# 14. Check container status
-print_status "Checking container status..."
+# 15. Final status check
+print_status "Checking final container status..."
 docker-compose ps
 
 # 14. Test API endpoint
 print_status "Testing API endpoint..."
-sleep 10
-if curl -f http://localhost/api/ > /dev/null 2>&1; then
-    print_status "✅ API is responding!"
-else
-    print_warning "⚠️  API might not be ready yet, check logs with: docker-compose logs app"
-fi
+sleep 5
+
+# Test with multiple attempts
+for i in {1..3}; do
+    if curl -f http://localhost/ > /dev/null 2>&1; then
+        print_status "✅ Application is working!"
+        break
+    else
+        print_warning "Attempt $i failed, retrying in 5 seconds..."
+        sleep 5
+    fi
+done
+
+# 15. Final status check
 
 print_status "🎉 Backend deployment completed!"
 print_status "📊 Access phpMyAdmin at: http://$(curl -s ifconfig.me):8080"
