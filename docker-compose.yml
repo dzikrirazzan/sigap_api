@@ -1,0 +1,116 @@
+version: '3.8'
+
+services:
+  # Laravel API Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: emergency-api
+    container_name: emergency_api
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+      - ./storage:/var/www/storage:delegated
+    depends_on:
+      - db
+      - redis
+    environment:
+      - APP_ENV=production
+      - DB_HOST=db
+      - DB_DATABASE=emergency_api
+      - DB_USERNAME=emergency_user
+      - DB_PASSWORD=emergency_password_2024
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    networks:
+      - emergency_network
+
+  # Nginx Web Server
+  webserver:
+    image: nginx:1.21-alpine
+    container_name: emergency_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./:/var/www
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d
+      - ./docker/nginx/ssl:/etc/nginx/ssl
+    depends_on:
+      - app
+    networks:
+      - emergency_network
+
+  # MySQL Database
+  db:
+    image: mysql:8.0
+    container_name: emergency_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: emergency_api
+      MYSQL_ROOT_PASSWORD: root_emergency_2024
+      MYSQL_USER: emergency_user
+      MYSQL_PASSWORD: emergency_password_2024
+      MYSQL_ALLOW_EMPTY_PASSWORD: 'no'
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d
+    ports:
+      - "3306:3306"
+    command: [
+      '--default-authentication-plugin=mysql_native_password',
+      '--character-set-server=utf8mb4',
+      '--collation-server=utf8mb4_unicode_ci',
+      '--innodb-buffer-pool-size=256M'
+    ]
+    networks:
+      - emergency_network
+
+  # Redis for Cache and Sessions
+  redis:
+    image: redis:7-alpine
+    container_name: emergency_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --requirepass redis_emergency_2024
+    networks:
+      - emergency_network
+
+  # phpMyAdmin untuk manage database (optional)
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: emergency_phpmyadmin
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_USER: emergency_user
+      PMA_PASSWORD: emergency_password_2024
+      MYSQL_ROOT_PASSWORD: root_emergency_2024
+    depends_on:
+      - db
+    networks:
+      - emergency_network
+
+# Networks
+networks:
+  emergency_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+# Volumes untuk persistent data
+volumes:
+  mysql_data:
+    driver: local
+  redis_data:
+    driver: local
