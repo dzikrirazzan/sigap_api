@@ -113,11 +113,20 @@ docker-compose -f $DOCKER_COMPOSE_FILE up -d --build
 print_status "Waiting for database to be ready..."
 sleep 30
 
-# 12. Run Laravel setup commands
+# 12. Fix permissions before Laravel setup
+print_status "Fixing file permissions for Laravel..."
+docker-compose exec -T --user root app chown -R www-data:www-data /var/www
+docker-compose exec -T --user root app chmod 664 /var/www/.env
+docker-compose exec -T --user root app chmod -R 775 /var/www/storage
+docker-compose exec -T --user root app chmod -R 775 /var/www/bootstrap/cache
+docker-compose exec -T --user root app touch /var/www/storage/logs/laravel.log
+docker-compose exec -T --user root app chown www-data:www-data /var/www/storage/logs/laravel.log
+
+# 13. Run Laravel setup commands
 print_status "Running Laravel setup commands..."
 
-# Install/update composer dependencies
-docker-compose exec -T app composer install --no-dev --optimize-autoloader
+# Install/update composer dependencies (if needed)
+docker-compose exec -T app composer install --no-dev --optimize-autoloader --no-interaction 2>/dev/null || true
 
 # Generate application key if not set
 docker-compose exec -T app php artisan key:generate --force
@@ -126,11 +135,12 @@ docker-compose exec -T app php artisan key:generate --force
 docker-compose exec -T app php artisan migrate --force
 
 # Clear and cache configurations
+docker-compose exec -T app php artisan config:clear
+docker-compose exec -T app php artisan cache:clear
 docker-compose exec -T app php artisan config:cache
 docker-compose exec -T app php artisan route:cache
-docker-compose exec -T app php artisan view:cache
 
-# 13. Check container status
+# 14. Check container status
 print_status "Checking container status..."
 docker-compose ps
 
