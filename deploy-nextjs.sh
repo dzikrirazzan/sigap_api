@@ -44,7 +44,7 @@ log_error() {
 # Update system
 update_system() {
     log_info "Updating system packages..."
-    sudo apt update && sudo apt upgrade -y
+    DEBIAN_FRONTEND=noninteractive sudo apt update && sudo apt upgrade -y
     log_success "System updated successfully"
 }
 
