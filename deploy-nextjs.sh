@@ -44,7 +44,7 @@ log_error() {
 # Update system
 update_system() {
     log_info "Updating system packages..."
-    DEBIAN_FRONTEND=noninteractive sudo apt update && sudo apt upgrade -y
+    sudo apt update && sudo apt upgrade -y
     log_success "System updated successfully"
 }
 
@@ -395,8 +395,8 @@ display_final_info() {
 # Main execution
 main() {
     log_info "Starting SIGAP UNDIP Frontend deployment..."
-    
-    update_system
+
+    # update_system
     install_nodejs
     install_pm2
     install_nginx
