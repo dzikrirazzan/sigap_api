@@ -28,9 +28,9 @@ print_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
-echo "🚀 Emergency API Native Deployment for Ubuntu 22.04"
-echo "📅 $(date)"
-echo "🖥️  $(lsb_release -d | cut -f2)"
+echo "Emergency API Native Deployment for Ubuntu 22.04"
+echo "$(date)"
+echo "$(lsb_release -d | cut -f2)"
 
 # Check if running as root
 if [ "$EUID" -ne 0 ]; then
@@ -240,13 +240,13 @@ fi
 
 # 22. Display final information
 echo
-print_success "🎉 Emergency API Deployment Completed!"
+print_success "Emergency API Deployment Completed!"
 echo
-echo "📊 Service Information:"
-echo "🌐 API URL: http://$(hostname -I | awk '{print $1}')/"
-echo "🗄️ Database: emergency_api"
-echo "📁 Project Path: /var/www/emergency_api"
-echo "📋 Logs: /var/www/emergency_api/storage/logs/laravel.log"
+echo "Service Information:"
+echo "API URL: http://$(hostname -I | awk '{print $1}')/"
+echo "Database: emergency_api"
+echo "Project Path: /var/www/emergency_api"
+echo "Logs: /var/www/emergency_api/storage/logs/laravel.log"
 echo
 echo "🔧 Management Commands:"
 echo "sudo systemctl restart nginx"
@@ -254,7 +254,7 @@ echo "sudo systemctl restart php8.2-fpm"
 echo "sudo systemctl restart mysql"
 echo "sudo systemctl restart emergency-api-worker"
 echo
-echo "📈 Monitor logs:"
+echo "Monitor logs:"
 echo "tail -f /var/www/emergency_api/storage/logs/laravel.log"
 echo "tail -f /var/log/nginx/access.log"
 echo "tail -f /var/log/nginx/error.log"
