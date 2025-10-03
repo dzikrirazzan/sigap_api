@@ -41,13 +41,6 @@ log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
-check_root() {
-    if [[ $EUID -eq 0 ]]; then
-        log_error "This script should not be run as root. Please run as a regular user with sudo privileges."
-        exit 1
-    fi
-}
-
 # Update system
 update_system() {
     log_info "Updating system packages..."
@@ -342,28 +335,28 @@ create_update_script() {
 APP_DIR="/home/$(whoami)/apps/sigap-undip-frontend"
 PM2_APP_NAME="sigap-frontend"
 
-echo "🔄 Updating SIGAP Frontend..."
+echo  "Updating SIGAP Frontend..."
 
 cd $APP_DIR
 
 # Pull latest changes
-echo "📦 Pulling latest changes..."
+echo "Pulling latest changes..."
 git pull origin main || git pull origin master
 
 # Install dependencies
-echo "📦 Installing dependencies..."
+echo "Installing dependencies..."
 npm ci --production=false
 
 # Build application
-echo "🏗️  Building application..."
+echo "Building application..."
 npm run build
 
 # Restart PM2
-echo "🔄 Restarting application..."
+echo "Restarting application..."
 pm2 restart $PM2_APP_NAME
 
-echo "✅ Update completed successfully!"
-echo "🌐 Application available at: http://152.42.171.87"
+echo "Update completed successfully!"
+echo "Application available at: http://152.42.171.87"
 EOF
     
     chmod +x $USER_HOME/update-sigap-frontend.sh
@@ -375,23 +368,23 @@ EOF
 display_final_info() {
     echo ""
     echo "================================================"
-    log_success "🎉 SIGAP UNDIP Frontend Deployment Complete!"
+    log_success "SIGAP UNDIP Frontend Deployment Complete!"
     echo "================================================"
     echo ""
-    log_info "📋 Deployment Summary:"
+    log_info "Deployment Summary:"
     echo "   • Application URL: http://$APP_DOMAIN"
     echo "   • Application Directory: $APP_DIR"
     echo "   • PM2 App Name: $PM2_APP_NAME"
     echo "   • Nginx Site: $NGINX_SITE_NAME"
     echo ""
-    log_info "🔧 Useful Commands:"
+    log_info "Useful Commands:"
     echo "   • Check app status: pm2 status"
     echo "   • View app logs: pm2 logs $PM2_APP_NAME"
     echo "   • Restart app: pm2 restart $PM2_APP_NAME"
     echo "   • Update app: $USER_HOME/update-sigap-frontend.sh"
     echo "   • Check Nginx status: sudo systemctl status nginx"
     echo ""
-    log_warning "📝 Important Notes:"
+    log_warning "Important Notes:"
     echo "   • Update .env.local file with your actual configuration"
     echo "   • Update GIT_REPO variable in this script with your repository URL"
     echo "   • Configure your Laravel backend to allow CORS for this domain"
@@ -403,7 +396,6 @@ display_final_info() {
 main() {
     log_info "Starting SIGAP UNDIP Frontend deployment..."
     
-    check_root
     update_system
     install_nodejs
     install_pm2
