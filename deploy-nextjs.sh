@@ -16,7 +16,7 @@ NC='\033[0m' # No Color
 
 # Configuration
 APP_NAME="sigap-undip-frontend"
-APP_DOMAIN="152.42.171.87"  # Your VM IP
+APP_DOMAIN="$(curl -s ifconfig.me || hostname -I | awk '{print $1}')"  # Dynamic VM IP
 APP_PORT=3000
 PM2_APP_NAME="sigap-frontend"
 NGINX_SITE_NAME="sigap-frontend"
@@ -356,7 +356,7 @@ echo "Restarting application..."
 pm2 restart $PM2_APP_NAME
 
 echo "Update completed successfully!"
-echo "Application available at: http://152.42.171.87"
+echo "Application available at: http://$(curl -s ifconfig.me || hostname -I | awk '{print $1}')"
 EOF
     
     chmod +x $USER_HOME/update-sigap-frontend.sh
