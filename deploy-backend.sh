@@ -111,43 +111,49 @@ docker-compose -f $DOCKER_COMPOSE_FILE up -d --build
 
 # 11. Wait for database to be ready
 print_status "Waiting for containers to be fully ready..."
-sleep 30
+sleep 45
 
-# Wait for app container to be ready
-print_status "Waiting for Laravel container..."
-until docker-compose exec -T app php --version > /dev/null 2>&1; do
-    echo "Waiting for Laravel container to be ready..."
-    sleep 5
+# Simple container readiness check
+print_status "Checking if containers are ready..."
+for i in {1..6}; do
+    if docker-compose ps | grep -q "Up"; then
+        print_status "Containers are up, proceeding..."
+        break
+    else
+        print_status "Waiting for containers... attempt $i/6"
+        sleep 10
+    fi
 done
 
 # 12. Fix permissions before Laravel setup
 print_status "Fixing file permissions for Laravel..."
-docker-compose exec -T --user root app sh -c "
+# Use timeout to prevent hanging
+timeout 30 docker-compose exec -T --user root app sh -c "
     chown -R www-data:www-data /var/www && \
     chmod 664 /var/www/.env && \
     chmod -R 775 /var/www/storage && \
     chmod -R 775 /var/www/bootstrap/cache && \
     touch /var/www/storage/logs/laravel.log && \
     chown www-data:www-data /var/www/storage/logs/laravel.log
-"
+" || print_warning "Permission fix timed out, continuing..."
 
 # 13. Run Laravel setup commands
 print_status "Running Laravel setup commands..."
 
-# Generate application key
+# Generate application key with timeout
 print_status "Generating APP_KEY..."
-docker-compose exec -T app php artisan key:generate --force --no-ansi
+timeout 30 docker-compose exec -T app php artisan key:generate --force --no-ansi || print_warning "Key generation may have failed"
 
-# Run database migrations
+# Run database migrations with timeout
 print_status "Running database migrations..."
-docker-compose exec -T app php artisan migrate --force --no-ansi
+timeout 60 docker-compose exec -T app php artisan migrate --force --no-ansi || print_warning "Migration may have failed"
 
-# Clear and cache configurations
+# Clear and cache configurations with timeout
 print_status "Clearing and caching configurations..."
-docker-compose exec -T app php artisan config:clear --no-ansi
-docker-compose exec -T app php artisan cache:clear --no-ansi
-docker-compose exec -T app php artisan config:cache --no-ansi
-docker-compose exec -T app php artisan route:cache --no-ansi
+timeout 30 docker-compose exec -T app php artisan config:clear --no-ansi || true
+timeout 30 docker-compose exec -T app php artisan cache:clear --no-ansi || true
+timeout 30 docker-compose exec -T app php artisan config:cache --no-ansi || true
+timeout 30 docker-compose exec -T app php artisan route:cache --no-ansi || true
 
 # 15. Final status check
 print_status "Checking final container status..."
@@ -157,13 +163,16 @@ docker-compose ps
 print_status "Testing API endpoint..."
 sleep 5
 
-# Test with multiple attempts
-for i in {1..3}; do
-    if curl -f http://localhost/ > /dev/null 2>&1; then
+# Test with multiple attempts and timeout
+for i in {1..5}; do
+    print_status "Testing application... attempt $i/5"
+    if timeout 10 curl -f http://localhost/ > /dev/null 2>&1; then
         print_status "✅ Application is working!"
         break
+    elif [ $i -eq 5 ]; then
+        print_warning "⚠️ Application test failed after 5 attempts"
+        print_warning "Check manually with: curl http://localhost/"
     else
-        print_warning "Attempt $i failed, retrying in 5 seconds..."
         sleep 5
     fi
 done
