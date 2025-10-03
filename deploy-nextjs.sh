@@ -45,12 +45,6 @@ log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
-# Update system
-update_system() {
-    log_info "Updating system packages..."
-    sudo apt update && sudo apt upgrade -y
-    log_success "System updated successfully"
-}
 
 # Install Node.js 20 LTS
 install_nodejs() {
@@ -399,7 +393,6 @@ display_final_info() {
 main() {
     log_info "Starting SIGAP UNDIP Frontend deployment..."
 
-    update_system
     install_nodejs
     install_pm2
     install_nginx
