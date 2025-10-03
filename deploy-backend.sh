@@ -115,6 +115,17 @@ sleep 45
 
 # 12. Install composer dependencies (needed because of volume mount)
 print_status "Installing composer dependencies..."
+# Fix git ownership first
+docker-compose exec -T --user root app git config --global --add safe.directory /var/www
+
+# Create and fix directories before composer
+docker-compose exec -T --user root app sh -c "
+    mkdir -p /var/www/storage/logs /var/www/bootstrap/cache && \
+    chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache && \
+    chmod -R 775 /var/www/storage /var/www/bootstrap/cache
+"
+
+# Now run composer install
 timeout 120 docker-compose exec -T app composer install --no-dev --optimize-autoloader --no-interaction || {
     print_warning "Composer install failed, retrying..."
     sleep 10
@@ -124,13 +135,19 @@ timeout 120 docker-compose exec -T app composer install --no-dev --optimize-auto
 # 13. Fix permissions after composer install
 print_status "Fixing file permissions..."
 timeout 30 docker-compose exec -T --user root app sh -c "
+    # Ensure all Laravel directories exist
+    mkdir -p /var/www/storage/logs /var/www/storage/app/public /var/www/storage/framework/{cache,sessions,testing,views} /var/www/bootstrap/cache
+    
+    # Set proper ownership and permissions
     chown -R www-data:www-data /var/www && \
     chmod 664 /var/www/.env && \
     chmod -R 775 /var/www/storage && \
     chmod -R 775 /var/www/bootstrap/cache && \
-    mkdir -p /var/www/storage/logs && \
+    
+    # Create and set permissions for log file
     touch /var/www/storage/logs/laravel.log && \
-    chown www-data:www-data /var/www/storage/logs/laravel.log
+    chown www-data:www-data /var/www/storage/logs/laravel.log && \
+    chmod 664 /var/www/storage/logs/laravel.log
 " || print_warning "Permission fix may have failed"
 
 # 14. Generate APP_KEY if not set
