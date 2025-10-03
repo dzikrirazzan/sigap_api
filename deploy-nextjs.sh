@@ -20,8 +20,8 @@ APP_DOMAIN="$(curl -s ifconfig.me || hostname -I | awk '{print $1}')"  # Dynamic
 APP_PORT=3000
 PM2_APP_NAME="sigap-frontend"
 NGINX_SITE_NAME="sigap-frontend"
-USER_HOME="/home/$(whoami)"
-APP_DIR="$USER_HOME/apps/$APP_NAME"
+USER_HOME="/var/www"
+APP_DIR="$USER_HOME/$APP_NAME"
 GIT_REPO="https://github.com/mariosianturi19/SIGAP-UNDIP.git"
 
 # Functions
@@ -110,7 +110,6 @@ setup_firewall() {
 create_app_directory() {
     log_info "Creating application directory..."
     
-    mkdir -p $USER_HOME/apps
     mkdir -p $APP_DIR
     
     log_success "Application directory created: $APP_DIR"
@@ -204,16 +203,16 @@ module.exports = {
       NODE_ENV: 'production',
       PORT: $APP_PORT
     },
-    error_file: '$USER_HOME/logs/$PM2_APP_NAME-error.log',
-    out_file: '$USER_HOME/logs/$PM2_APP_NAME-out.log',
-    log_file: '$USER_HOME/logs/$PM2_APP_NAME.log',
+    error_file: '/var/log/pm2/$PM2_APP_NAME-error.log',
+    out_file: '/var/log/pm2/$PM2_APP_NAME-out.log',
+    log_file: '/var/log/pm2/$PM2_APP_NAME.log',
     time: true
   }]
 };
 EOF
     
     # Create logs directory
-    mkdir -p $USER_HOME/logs
+    mkdir -p /var/log/pm2
     
     log_success "PM2 configuration created"
 }
@@ -328,11 +327,11 @@ start_application() {
 create_update_script() {
     log_info "Creating update script..."
     
-    cat > $USER_HOME/update-sigap-frontend.sh << 'EOF'
+    cat > /var/www/update-sigap-frontend.sh << 'EOF'
 #!/bin/bash
 
 # SIGAP Frontend Update Script
-APP_DIR="/home/$(whoami)/apps/sigap-undip-frontend"
+APP_DIR="/var/www/sigap-undip-frontend"
 PM2_APP_NAME="sigap-frontend"
 
 echo  "Updating SIGAP Frontend..."
@@ -359,9 +358,9 @@ echo "Update completed successfully!"
 echo "Application available at: http://$(curl -s ifconfig.me || hostname -I | awk '{print $1}')"
 EOF
     
-    chmod +x $USER_HOME/update-sigap-frontend.sh
+    chmod +x /var/www/update-sigap-frontend.sh
     
-    log_success "Update script created at $USER_HOME/update-sigap-frontend.sh"
+    log_success "Update script created at /var/www/update-sigap-frontend.sh"
 }
 
 # Display final information
@@ -381,7 +380,7 @@ display_final_info() {
     echo "   • Check app status: pm2 status"
     echo "   • View app logs: pm2 logs $PM2_APP_NAME"
     echo "   • Restart app: pm2 restart $PM2_APP_NAME"
-    echo "   • Update app: $USER_HOME/update-sigap-frontend.sh"
+    echo "   • Update app: /var/www/update-sigap-frontend.sh"
     echo "   • Check Nginx status: sudo systemctl status nginx"
     echo ""
     log_warning "Important Notes:"
