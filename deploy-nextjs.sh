@@ -396,7 +396,7 @@ display_final_info() {
 main() {
     log_info "Starting SIGAP UNDIP Frontend deployment..."
 
-    # update_system
+    update_system
     install_nodejs
     install_pm2
     install_nginx
