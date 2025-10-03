@@ -113,55 +113,46 @@ docker-compose -f $DOCKER_COMPOSE_FILE up -d --build
 print_status "Waiting for containers to be fully ready..."
 sleep 45
 
-# Simple container readiness check
-print_status "Checking if containers are ready..."
-for i in {1..6}; do
-    if docker-compose ps | grep -q "Up"; then
-        print_status "Containers are up, proceeding..."
-        break
-    else
-        print_status "Waiting for containers... attempt $i/6"
-        sleep 10
-    fi
-done
+# 12. Install composer dependencies (needed because of volume mount)
+print_status "Installing composer dependencies..."
+timeout 120 docker-compose exec -T app composer install --no-dev --optimize-autoloader --no-interaction || {
+    print_warning "Composer install failed, retrying..."
+    sleep 10
+    timeout 120 docker-compose exec -T app composer install --no-dev --optimize-autoloader --no-interaction
+}
 
-# 12. Fix permissions before Laravel setup
-print_status "Fixing file permissions for Laravel..."
-# Use timeout to prevent hanging
+# 13. Fix permissions after composer install
+print_status "Fixing file permissions..."
 timeout 30 docker-compose exec -T --user root app sh -c "
     chown -R www-data:www-data /var/www && \
     chmod 664 /var/www/.env && \
     chmod -R 775 /var/www/storage && \
     chmod -R 775 /var/www/bootstrap/cache && \
+    mkdir -p /var/www/storage/logs && \
     touch /var/www/storage/logs/laravel.log && \
     chown www-data:www-data /var/www/storage/logs/laravel.log
-" || print_warning "Permission fix timed out, continuing..."
+" || print_warning "Permission fix may have failed"
 
-# 13. Run Laravel setup commands
-print_status "Running Laravel setup commands..."
-
-# Generate application key with timeout
+# 14. Generate APP_KEY if not set
 print_status "Generating APP_KEY..."
 timeout 30 docker-compose exec -T app php artisan key:generate --force --no-ansi || print_warning "Key generation may have failed"
 
-# Run database migrations with timeout
+# 15. Run database migrations
 print_status "Running database migrations..."
 timeout 60 docker-compose exec -T app php artisan migrate --force --no-ansi || print_warning "Migration may have failed"
 
-# Clear and cache configurations with timeout
-print_status "Clearing and caching configurations..."
-timeout 30 docker-compose exec -T app php artisan config:clear --no-ansi || true
-timeout 30 docker-compose exec -T app php artisan cache:clear --no-ansi || true
+# 16. Cache configurations
+print_status "Caching configurations..."
 timeout 30 docker-compose exec -T app php artisan config:cache --no-ansi || true
 timeout 30 docker-compose exec -T app php artisan route:cache --no-ansi || true
 
-# 15. Final status check
+# 18. Final status check
 print_status "Checking final container status..."
 docker-compose ps
 
-# 14. Test API endpoint
+# 17. Test API endpoint
 print_status "Testing API endpoint..."
-sleep 5
+sleep 10
 
 # Test with multiple attempts and timeout
 for i in {1..5}; do
@@ -170,14 +161,15 @@ for i in {1..5}; do
         print_status "✅ Application is working!"
         break
     elif [ $i -eq 5 ]; then
-        print_warning "⚠️ Application test failed after 5 attempts"
+        print_warning "⚠️ Application test failed, but deployment completed"
         print_warning "Check manually with: curl http://localhost/"
+        print_warning "Or check logs with: docker-compose logs app"
     else
-        sleep 5
+        sleep 10
     fi
 done
 
-# 15. Final status check
+# 18. Final status check
 
 print_status "🎉 Backend deployment completed!"
 print_status "📊 Access phpMyAdmin at: http://$(curl -s ifconfig.me):8080"

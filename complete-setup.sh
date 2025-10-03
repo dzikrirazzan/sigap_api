@@ -14,6 +14,10 @@ cd /var/www/Emergency_API
 echo "📊 Checking container status..."
 docker-compose ps
 
+# Install composer dependencies first
+echo "📦 Installing composer dependencies..."
+timeout 120 docker-compose exec -T app composer install --no-dev --optimize-autoloader --no-interaction || echo "⚠️ Composer install may have failed"
+
 # Fix permissions
 echo "🔐 Fixing permissions..."
 timeout 30 docker-compose exec -T --user root app sh -c "
@@ -21,6 +25,7 @@ timeout 30 docker-compose exec -T --user root app sh -c "
     chmod 664 /var/www/.env && \
     chmod -R 775 /var/www/storage && \
     chmod -R 775 /var/www/bootstrap/cache && \
+    mkdir -p /var/www/storage/logs && \
     touch /var/www/storage/logs/laravel.log && \
     chown www-data:www-data /var/www/storage/logs/laravel.log
 " || echo "⚠️ Permission fix may have failed"
@@ -34,9 +39,9 @@ echo "🗃️ Running migrations..."
 timeout 60 docker-compose exec -T app php artisan migrate --force || echo "⚠️ Migration may have failed"
 
 # Clear cache
-echo "🧹 Clearing cache..."
-timeout 30 docker-compose exec -T app php artisan config:clear || true
-timeout 30 docker-compose exec -T app php artisan cache:clear || true
+echo "🧹 Clearing and caching configs..."
+timeout 30 docker-compose exec -T app php artisan config:cache || true
+timeout 30 docker-compose exec -T app php artisan route:cache || true
 
 # Test application
 echo "🧪 Testing application..."
