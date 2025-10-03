@@ -5,7 +5,11 @@
 # Ubuntu 22.04 - One Shot Deployment
 # =========================================
 
-set -e  # Exit on any error
+# Check if running as root (warning only, not blocking)
+if [ "$EUID" -eq 0 ]; then
+    log_warning "Running as root. Consider using a regular user for better security."
+    # Continue anyway...
+fi
 
 # Colors for output
 RED='\033[0;31m'
