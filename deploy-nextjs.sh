@@ -1,412 +1,192 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-# =========================================
-# SIGAP UNDIP Next.js Deployment Script
-# Ubuntu 22.04 - One Shot Deployment
-# =========================================
+set -euo pipefail
 
-# Check if running as root (warning only, not blocking)
-if [ "$EUID" -eq 0 ]; then
-    log_warning "Running as root. Consider using a regular user for better security."
-    # Continue anyway...
-fi
+APP_NAME="sigap-undip"
+APP_USER="sigap"
+APP_ROOT="/opt/${APP_NAME}"
+APP_REPO_DIR="${APP_ROOT}/app"
+APP_LOG_DIR="${APP_ROOT}/logs"
+REPO_URL="https://github.com/mariosianturi19/SIGAP-UNDIP.git"
+BRANCH="main"
+NODE_MAJOR="20"
+APP_PORT="3000"
+# Optional: set to an absolute path of a prepared env file to be copied into place.
+ENV_FILE_SOURCE=""
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
-
-# Configuration
-APP_NAME="sigap-undip-frontend"
-APP_DOMAIN="$(curl -s ifconfig.me || hostname -I | awk '{print $1}')"  # Dynamic VM IP
-APP_PORT=3000
-PM2_APP_NAME="sigap-frontend"
-NGINX_SITE_NAME="sigap-frontend"
-USER_HOME="/var/www"
-APP_DIR="$USER_HOME/$APP_NAME"
-GIT_REPO="https://github.com/mariosianturi19/SIGAP-UNDIP.git"
-
-# Functions
-log_info() {
-    echo -e "${BLUE}[INFO]${NC} $1"
+log() {
+  printf '[INFO] %s\n' "$*"
 }
 
-log_success() {
-    echo -e "${GREEN}[SUCCESS]${NC} $1"
+warn() {
+  printf '[WARN] %s\n' "$*" >&2
 }
 
-log_warning() {
-    echo -e "${YELLOW}[WARNING]${NC} $1"
+error() {
+  printf '[ERROR] %s\n' "$*" >&2
 }
 
-log_error() {
-    echo -e "${RED}[ERROR]${NC} $1"
+abort() {
+  error "Deployment failed on line ${BASH_LINENO[0]}."
+  exit 1
 }
 
+trap abort ERR
 
-# Install Node.js 20 LTS
-install_nodejs() {
-    log_info "Installing Node.js 20 LTS..."
-    
-    # Remove any existing Node.js installations
-    sudo apt remove -y nodejs npm || true
-    
-    # Install Node.js 20 LTS using NodeSource repository
-    curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-    sudo apt-get install -y nodejs
-    
-    # Verify installation
-    node_version=$(node --version)
-    npm_version=$(npm --version)
-    
-    log_success "Node.js installed: $node_version"
-    log_success "NPM installed: $npm_version"
+require_root() {
+  if [[ "${EUID}" -ne 0 ]]; then
+    error "Please run this script as root (use sudo)."
+    exit 1
+  fi
 }
 
-# Install PM2
-install_pm2() {
-    log_info "Installing PM2..."
-    sudo npm install -g pm2
-    
-    # Setup PM2 startup
-    sudo pm2 startup systemd -u $(whoami) --hp $USER_HOME
-    
-    log_success "PM2 installed successfully"
+run_as_app() {
+  sudo -u "${APP_USER}" -H bash -lc "$1"
 }
 
-# Install and configure Nginx
-install_nginx() {
-    log_info "Installing and configuring Nginx..."
-    sudo apt install -y nginx
-    
-    # Enable and start Nginx
-    sudo systemctl enable nginx
-    sudo systemctl start nginx
-    
-    log_success "Nginx installed and started"
+ensure_dependencies() {
+  export DEBIAN_FRONTEND=noninteractive
+  log "Updating apt cache and installing base packages..."
+  apt-get update -y
+  apt-get install -y ca-certificates curl gnupg git build-essential
 }
 
-# Setup firewall
-setup_firewall() {
-    log_info "Configuring firewall..."
-    
-    # Enable UFW
-    sudo ufw --force enable
-    
-    # Allow SSH, HTTP, HTTPS, and our app port
-    sudo ufw allow ssh
-    sudo ufw allow 80
-    sudo ufw allow 443
-    sudo ufw allow $APP_PORT
-    
-    log_success "Firewall configured"
-}
-
-# Create application directory
-create_app_directory() {
-    log_info "Creating application directory..."
-    
-    mkdir -p $APP_DIR
-    
-    log_success "Application directory created: $APP_DIR"
-}
-
-# Clone repository
-clone_repository() {
-    log_info "Cloning repository..."
-    
-    # Prompt for GitHub repository URL if not set
-    if [[ "$GIT_REPO" == *"mariosianturi19"* ]]; then
-        log_info "Using repository: $GIT_REPO"
+install_node() {
+  if command -v node >/dev/null 2>&1; then
+    local current_major
+    current_major="$(node -p 'process.versions.node.split(".")[0]')"
+    if [[ "${current_major}" -ge "${NODE_MAJOR}" ]]; then
+      log "Node.js $(node -v) already satisfies the requirement."
+      return
     fi
-    
-    if [ -d "$APP_DIR/.git" ]; then
-        log_info "Repository already exists, pulling latest changes..."
-        cd $APP_DIR
-        git pull origin main || git pull origin master
-    else
-        log_info "Cloning fresh repository..."
-        git clone $GIT_REPO $APP_DIR
-        cd $APP_DIR
-    fi
-    
-    log_success "Repository cloned/updated successfully"
+    warn "Existing Node.js version $(node -v) is older than required ${NODE_MAJOR}.x."
+  fi
+
+  log "Installing Node.js ${NODE_MAJOR}.x from NodeSource..."
+  curl -fsSL "https://deb.nodesource.com/setup_${NODE_MAJOR}.x" | bash -
+  apt-get install -y nodejs
 }
 
-# Install dependencies and build
+ensure_app_user() {
+  if ! id -u "${APP_USER}" >/dev/null 2>&1; then
+    log "Creating system user ${APP_USER}..."
+    useradd \
+      --system \
+      --create-home \
+      --home "${APP_ROOT}" \
+      --shell /bin/bash \
+      "${APP_USER}"
+  fi
+
+  mkdir -p "${APP_ROOT}" "${APP_LOG_DIR}"
+  chown -R "${APP_USER}:${APP_USER}" "${APP_ROOT}"
+}
+
+clone_or_update_repo() {
+  mkdir -p "${APP_REPO_DIR}"
+  chown -R "${APP_USER}:${APP_USER}" "${APP_ROOT}"
+
+  if [[ -d "${APP_REPO_DIR}/.git" ]]; then
+    log "Updating existing repository in ${APP_REPO_DIR}..."
+    run_as_app "cd '${APP_REPO_DIR}' && git fetch --all --prune && git checkout '${BRANCH}' && git reset --hard origin/'${BRANCH}'"
+  else
+    if [[ -n "$(ls -A "${APP_REPO_DIR}" 2>/dev/null)" ]]; then
+      error "Target directory ${APP_REPO_DIR} is not empty and not a git repo. Aborting."
+      exit 1
+    fi
+    log "Cloning ${REPO_URL} (branch ${BRANCH}) into ${APP_REPO_DIR}..."
+    run_as_app "git clone --branch '${BRANCH}' '${REPO_URL}' '${APP_REPO_DIR}'"
+  fi
+}
+
+stage_env_file() {
+  local target_env
+  target_env="${APP_REPO_DIR}/.env.production"
+
+  if [[ -n "${ENV_FILE_SOURCE}" ]]; then
+    if [[ ! -f "${ENV_FILE_SOURCE}" ]]; then
+      error "ENV_FILE_SOURCE=${ENV_FILE_SOURCE} does not exist."
+      exit 1
+    fi
+    log "Copying environment file from ${ENV_FILE_SOURCE}..."
+    cp "${ENV_FILE_SOURCE}" "${target_env}"
+    chown "${APP_USER}:${APP_USER}" "${target_env}"
+    chmod 600 "${target_env}"
+  else
+    warn "No ENV_FILE_SOURCE provided. Make sure ${target_env} exists before starting the service."
+  fi
+}
+
+install_node_modules() {
+  log "Installing npm dependencies..."
+  run_as_app "cd '${APP_REPO_DIR}' && npm ci"
+}
+
 build_application() {
-    log_info "Installing dependencies and building application..."
-    
-    cd $APP_DIR
-    
-    # Install dependencies
-    npm ci --production=false
-    
-    # Build the application
-    npm run build
-    
-    log_success "Application built successfully"
+  log "Building the Next.js application..."
+  run_as_app "cd '${APP_REPO_DIR}' && npm run build"
+  log "Removing development dependencies..."
+  run_as_app "cd '${APP_REPO_DIR}' && npm prune --omit=dev"
 }
 
-# Create environment file
-create_env_file() {
-    log_info "Creating environment file..."
-    
-    cd $APP_DIR
-    
-    # Create .env.local if it doesn't exist
-    if [ ! -f ".env.local" ]; then
-        cat > .env.local << EOF
-# Next.js Environment Configuration
-NODE_ENV=production
-PORT=$APP_PORT
+configure_systemd_service() {
+  local service_file="/etc/systemd/system/${APP_NAME}.service"
+  log "Creating systemd service ${APP_NAME}.service..."
 
-# API Configuration - Update with your Laravel backend URL
-NEXT_PUBLIC_API_URL=http://$APP_DOMAIN:8000
-NEXT_PUBLIC_BACKEND_URL=http://$APP_DOMAIN:8000
+  cat > "${service_file}" <<EOF
+[Unit]
+Description=SIGAP UNDIP Next.js service
+After=network.target
+Wants=network-online.target
 
-# App Configuration
-NEXT_PUBLIC_APP_URL=http://$APP_DOMAIN:$APP_PORT
-NEXT_PUBLIC_APP_NAME=SIGAP UNDIP
+[Service]
+Type=simple
+User=${APP_USER}
+Group=${APP_USER}
+WorkingDirectory=${APP_REPO_DIR}
+Environment=NODE_ENV=production
+Environment=PORT=${APP_PORT}
+EnvironmentFile=-${APP_REPO_DIR}/.env.production
+ExecStart=/usr/bin/env PORT=${APP_PORT} npm start
+Restart=on-failure
+RestartSec=5
+StandardOutput=append:${APP_LOG_DIR}/app.log
+StandardError=append:${APP_LOG_DIR}/app-error.log
 
-# Add your other environment variables here
+[Install]
+WantedBy=multi-user.target
 EOF
-        log_warning "Environment file created. Please update .env.local with your actual configuration."
+
+  chmod 644 "${service_file}"
+  systemctl daemon-reload
+  systemctl enable "${APP_NAME}.service"
+  systemctl restart "${APP_NAME}.service"
+  systemctl status --no-pager "${APP_NAME}.service"
+}
+
+configure_firewall() {
+  if command -v ufw >/dev/null 2>&1; then
+    if ufw status | grep -q inactive; then
+      warn "ufw is installed but inactive. Skipping firewall rule."
     else
-        log_info "Environment file already exists"
+      log "Allowing TCP port ${APP_PORT} through ufw..."
+      ufw allow "${APP_PORT}/tcp"
     fi
+  fi
 }
 
-# Setup PM2 configuration
-setup_pm2_config() {
-    log_info "Setting up PM2 configuration..."
-    
-    cd $APP_DIR
-    
-    # Create PM2 ecosystem file
-    cat > ecosystem.config.js << EOF
-module.exports = {
-  apps: [{
-    name: '$PM2_APP_NAME',
-    script: 'npm',
-    args: 'start',
-    cwd: '$APP_DIR',
-    instances: 1,
-    autorestart: true,
-    watch: false,
-    max_memory_restart: '1G',
-    env: {
-      NODE_ENV: 'production',
-      PORT: $APP_PORT
-    },
-    error_file: '/var/log/pm2/$PM2_APP_NAME-error.log',
-    out_file: '/var/log/pm2/$PM2_APP_NAME-out.log',
-    log_file: '/var/log/pm2/$PM2_APP_NAME.log',
-    time: true
-  }]
-};
-EOF
-    
-    # Create logs directory
-    mkdir -p /var/log/pm2
-    
-    log_success "PM2 configuration created"
-}
-
-# Configure Nginx
-configure_nginx() {
-    log_info "Configuring Nginx..."
-    
-    # Create Nginx site configuration
-    sudo tee /etc/nginx/sites-available/$NGINX_SITE_NAME > /dev/null << EOF
-server {
-    listen 80;
-    server_name $APP_DOMAIN;
-    
-    # Security headers
-    add_header X-Frame-Options "SAMEORIGIN" always;
-    add_header X-XSS-Protection "1; mode=block" always;
-    add_header X-Content-Type-Options "nosniff" always;
-    add_header Referrer-Policy "no-referrer-when-downgrade" always;
-    add_header Content-Security-Policy "default-src 'self' http: https: data: blob: 'unsafe-inline'" always;
-    
-    # Gzip compression
-    gzip on;
-    gzip_vary on;
-    gzip_min_length 1024;
-    gzip_proxied expired no-cache no-store private must-revalidate auth;
-    gzip_types text/plain text/css text/xml text/javascript application/x-javascript application/xml+rss application/javascript;
-    
-    # Handle Next.js static files
-    location /_next/static {
-        alias $APP_DIR/.next/static;
-        expires 365d;
-        access_log off;
-    }
-    
-    # Handle public files
-    location /public {
-        alias $APP_DIR/public;
-        expires 30d;
-        access_log off;
-    }
-    
-    # Handle favicon and other root files
-    location ~* \.(ico|css|js|gif|jpe?g|png|svg)$ {
-        root $APP_DIR/public;
-        expires 30d;
-        access_log off;
-    }
-    
-    # Proxy all other requests to Next.js
-    location / {
-        proxy_pass http://localhost:$APP_PORT;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade \$http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-        proxy_cache_bypass \$http_upgrade;
-        
-        # Timeouts
-        proxy_connect_timeout       60s;
-        proxy_send_timeout          60s;
-        proxy_read_timeout          60s;
-    }
-    
-    # Health check endpoint
-    location /health {
-        access_log off;
-        return 200 "healthy\n";
-        add_header Content-Type text/plain;
-    }
-}
-EOF
-    
-    # Enable the site
-    sudo ln -sf /etc/nginx/sites-available/$NGINX_SITE_NAME /etc/nginx/sites-enabled/
-    
-    # Remove default site if it exists
-    sudo rm -f /etc/nginx/sites-enabled/default
-    
-    # Test Nginx configuration
-    sudo nginx -t
-    
-    # Reload Nginx
-    sudo systemctl reload nginx
-    
-    log_success "Nginx configured successfully"
-}
-
-# Start application
-start_application() {
-    log_info "Starting application with PM2..."
-    
-    cd $APP_DIR
-    
-    # Stop existing PM2 process if running
-    pm2 stop $PM2_APP_NAME 2>/dev/null || true
-    pm2 delete $PM2_APP_NAME 2>/dev/null || true
-    
-    # Start application
-    pm2 start ecosystem.config.js
-    
-    # Save PM2 configuration
-    pm2 save
-    
-    log_success "Application started successfully"
-}
-
-# Create deployment script for future updates
-create_update_script() {
-    log_info "Creating update script..."
-    
-    cat > /var/www/update-sigap-frontend.sh << 'EOF'
-#!/bin/bash
-
-# SIGAP Frontend Update Script
-APP_DIR="/var/www/sigap-undip-frontend"
-PM2_APP_NAME="sigap-frontend"
-
-echo  "Updating SIGAP Frontend..."
-
-cd $APP_DIR
-
-# Pull latest changes
-echo "Pulling latest changes..."
-git pull origin main || git pull origin master
-
-# Install dependencies
-echo "Installing dependencies..."
-npm ci --production=false
-
-# Build application
-echo "Building application..."
-npm run build
-
-# Restart PM2
-echo "Restarting application..."
-pm2 restart $PM2_APP_NAME
-
-echo "Update completed successfully!"
-echo "Application available at: http://$(curl -s ifconfig.me || hostname -I | awk '{print $1}')"
-EOF
-    
-    chmod +x /var/www/update-sigap-frontend.sh
-    
-    log_success "Update script created at /var/www/update-sigap-frontend.sh"
-}
-
-# Display final information
-display_final_info() {
-    echo ""
-    echo "================================================"
-    log_success "SIGAP UNDIP Frontend Deployment Complete!"
-    echo "================================================"
-    echo ""
-    log_info "Deployment Summary:"
-    echo "   • Application URL: http://$APP_DOMAIN"
-    echo "   • Application Directory: $APP_DIR"
-    echo "   • PM2 App Name: $PM2_APP_NAME"
-    echo "   • Nginx Site: $NGINX_SITE_NAME"
-    echo ""
-    log_info "Useful Commands:"
-    echo "   • Check app status: pm2 status"
-    echo "   • View app logs: pm2 logs $PM2_APP_NAME"
-    echo "   • Restart app: pm2 restart $PM2_APP_NAME"
-    echo "   • Update app: /var/www/update-sigap-frontend.sh"
-    echo "   • Check Nginx status: sudo systemctl status nginx"
-    echo ""
-    log_warning "Important Notes:"
-    echo "   • Update .env.local file with your actual configuration"
-    echo "   • Update GIT_REPO variable in this script with your repository URL"
-    echo "   • Configure your Laravel backend to allow CORS for this domain"
-    echo "   • Consider setting up SSL certificates for production"
-    echo ""
-}
-
-# Main execution
 main() {
-    log_info "Starting SIGAP UNDIP Frontend deployment..."
-
-    install_nodejs
-    install_pm2
-    install_nginx
-    setup_firewall
-    create_app_directory
-    clone_repository
-    create_env_file
-    build_application
-    setup_pm2_config
-    configure_nginx
-    start_application
-    create_update_script
-    display_final_info
+  require_root
+  ensure_dependencies
+  install_node
+  ensure_app_user
+  clone_or_update_repo
+  stage_env_file
+  install_node_modules
+  build_application
+  configure_systemd_service
+  configure_firewall
+  log "Deployment completed. Application should be accessible on port ${APP_PORT}."
 }
 
-# Run main function
 main "$@"
