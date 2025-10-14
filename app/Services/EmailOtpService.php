@@ -67,7 +67,7 @@ class EmailOtpService
             if ($user->hasVerifiedEmail()) {
                 return [
                     'success' => true,
-                    'message' => 'Email already verified',
+                    'message' => 'Email sudah diverifikasi',
                     'user' => $user,
                     'already_verified' => true
                 ];
@@ -84,7 +84,7 @@ class EmailOtpService
 
             return [
                 'success' => true,
-                'message' => 'Email verified successfully',
+                'message' => 'Email berhasil diverifikasi',
                 'user' => $user,
                 'access_token' => $token,
                 'token_type' => 'Bearer',
@@ -96,7 +96,7 @@ class EmailOtpService
             Log::error('OTP verification failed: ' . $e->getMessage());
             return [
                 'success' => false,
-                'message' => 'Verification failed'
+                'message' => 'Verifikasi gagal'
             ];
         }
     }
@@ -127,13 +127,13 @@ class EmailOtpService
 
             return [
                 'success' => true,
-                'message' => 'Password reset OTP sent successfully'
+                'message' => 'OTP reset password berhasil dikirim'
             ];
         } catch (\Exception $e) {
             Log::error('Failed to send password reset OTP: ' . $e->getMessage());
             return [
                 'success' => false,
-                'message' => 'Failed to send OTP email'
+                'message' => 'Gagal mengirim email OTP'
             ];
         }
     }
@@ -150,7 +150,7 @@ class EmailOtpService
             if (!$isValidOtp) {
                 return [
                     'success' => false,
-                    'message' => 'Invalid or expired OTP'
+                    'message' => 'OTP tidak valid atau sudah kedaluwarsa'
                 ];
             }
 
@@ -158,13 +158,13 @@ class EmailOtpService
 
             return [
                 'success' => true,
-                'message' => 'OTP verified successfully'
+                'message' => 'OTP berhasil diverifikasi'
             ];
         } catch (\Exception $e) {
             Log::error('Password reset OTP verification failed: ' . $e->getMessage());
             return [
                 'success' => false,
-                'message' => 'Verification failed'
+                'message' => 'Verifikasi gagal'
             ];
         }
     }

@@ -148,7 +148,7 @@ export default function ReportPhotoUpload() {
         setError(data.message || "Upload gagal");
       }
     } catch (err) {
-      setError("Network error. Please try again.");
+      setError("Terjadi kesalahan jaringan. Silakan coba lagi.");
     } finally {
       setLoading(false);
     }
@@ -165,12 +165,12 @@ export default function ReportPhotoUpload() {
       {preview && (
         <div>
           <img src={preview} alt="Preview" style={{ maxWidth: "300px" }} />
-          <p>Size: {(photo!.size / 1024 / 1024).toFixed(2)} MB</p>
+          <p>Ukuran: {(photo!.size / 1024 / 1024).toFixed(2)} MB</p>
         </div>
       )}
 
       <button onClick={handleUpload} disabled={!photo || loading}>
-        {loading ? "Uploading..." : "Upload Photo"}
+        {loading ? "Mengupload..." : "Upload Foto"}
       </button>
     </div>
   );
@@ -231,11 +231,12 @@ export default function ReportPhotoUpload() {
 
       if (data.success) {
         console.log("Photo uploaded:", data.photo_path);
+        alert("Foto berhasil diupload!");
       } else {
-        alert("Upload failed: " + data.message);
+        alert("Upload gagal: " + data.message);
       }
     } catch (error) {
-      alert("Network error");
+      alert("Terjadi kesalahan jaringan");
     }
   });
 </script>
@@ -249,19 +250,19 @@ export default function ReportPhotoUpload() {
 
 ```javascript
 // File type validation
-const validTypes = ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"];
+const validTypes = ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp", "image/heic", "image/heif"];
 
-// File size validation (5 MB)
-const maxSizeBytes = 5 * 1024 * 1024; // 5,242,880 bytes
+// File size validation (20 MB)
+const maxSizeBytes = 20 * 1024 * 1024; // 20,971,520 bytes
 
 // Validation function
 function validateImage(file) {
   if (!validTypes.includes(file.type)) {
-    return { valid: false, error: "Invalid file format" };
+    return { valid: false, error: "Format file tidak valid" };
   }
 
   if (file.size > maxSizeBytes) {
-    return { valid: false, error: "File too large. Max 20 MB" };
+    return { valid: false, error: "Ukuran file terlalu besar. Maksimal 20 MB" };
   }
 
   return { valid: true };

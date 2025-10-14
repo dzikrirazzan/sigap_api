@@ -55,14 +55,14 @@ class AuthController extends Controller
 
         if (!$otpSent) {
             return response()->json([
-                'message' => 'Registration successful but failed to send verification email. Please try to resend OTP.',
+                'message' => 'Registrasi berhasil tetapi gagal mengirim email verifikasi. Silakan kirim ulang OTP.',
                 'user' => $user,
                 'email_verification_required' => true,
             ], 201);
         }
 
         $response = [
-            'message' => 'Registration successful. Please check your email for OTP verification code.',
+            'message' => 'Registrasi berhasil. Silakan cek email Anda untuk kode verifikasi OTP.',
             'user' => $user,
             'email_verification_required' => true,
             'otp_expires_in_minutes' => 10,
@@ -102,7 +102,7 @@ class AuthController extends Controller
         ]);
 
         return response()->json([
-            'message' => 'Relawan registered successfully',
+            'message' => 'Relawan berhasil didaftarkan',
             'user' => $user
         ], 201);
     }
@@ -130,7 +130,7 @@ class AuthController extends Controller
         ]);
 
         return response()->json([
-            'message' => 'Admin registered successfully',
+            'message' => 'Admin berhasil didaftarkan',
             'user' => $user
         ], 201);
     }
@@ -227,7 +227,7 @@ class AuthController extends Controller
         auth()->user()->refreshTokens()->delete();
 
         return response()->json([
-            'message' => 'Logged out successfully'
+            'message' => 'Berhasil logout'
         ]);
     }
 
@@ -325,7 +325,7 @@ class AuthController extends Controller
         $user->save();
 
         return response()->json([
-            'message' => 'User updated successfully',
+            'message' => 'Data user berhasil diperbarui',
             'user' => $user
         ]);
     }
@@ -350,7 +350,7 @@ class AuthController extends Controller
         $user->delete();
 
         return response()->json([
-            'message' => 'User deleted successfully'
+            'message' => 'User berhasil dihapus'
         ]);
     }
 
@@ -406,17 +406,17 @@ class AuthController extends Controller
         }
 
         if ($user->hasVerifiedEmail()) {
-            return response()->json(['message' => 'Email already verified'], 200);
+            return response()->json(['message' => 'Email sudah diverifikasi'], 200);
         }
 
         $otpService = new EmailOtpService();
         $otpSent = $otpService->sendEmailVerificationOtp($user->email);
 
         if (!$otpSent) {
-            return response()->json(['message' => 'Failed to send OTP email'], 500);
+            return response()->json(['message' => 'Gagal mengirim email OTP'], 500);
         }
 
-        return response()->json(['message' => 'OTP sent successfully'], 200);
+        return response()->json(['message' => 'OTP berhasil dikirim'], 200);
     }
 
     /**
@@ -458,17 +458,17 @@ class AuthController extends Controller
         }
 
         if ($user->hasVerifiedEmail()) {
-            return response()->json(['message' => 'Email already verified'], 200);
+            return response()->json(['message' => 'Email sudah diverifikasi'], 200);
         }
 
         $otpService = new EmailOtpService();
         $otpSent = $otpService->sendEmailVerificationOtp($user->email);
 
         if (!$otpSent) {
-            return response()->json(['message' => 'Failed to send OTP email'], 500);
+            return response()->json(['message' => 'Gagal mengirim email OTP'], 500);
         }
 
-        return response()->json(['message' => 'OTP resent successfully'], 200);
+        return response()->json(['message' => 'OTP berhasil dikirim ulang'], 200);
     }
 
     /**
@@ -514,7 +514,7 @@ class AuthController extends Controller
 
         if ($result['success']) {
             return response()->json([
-                'message' => 'OTP verified successfully. You can now reset your password.',
+                'message' => 'OTP berhasil diverifikasi. Anda sekarang dapat mereset password Anda.',
                 'email' => $user->email
             ], 200);
         }
@@ -558,7 +558,7 @@ class AuthController extends Controller
         $user->tokens()->delete();
 
         return response()->json([
-            'message' => 'Password has been reset successfully. Please login with your new password.'
+            'message' => 'Password berhasil direset. Silakan login dengan password baru Anda.'
         ], 200);
     }
 

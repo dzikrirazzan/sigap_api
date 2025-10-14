@@ -39,7 +39,7 @@ class PanicController extends Controller
 
         if ($existingPanic) {
             return response()->json([
-                'message' => 'You already have an active panic report today. Please wait for resolution.',
+                'message' => 'Anda sudah memiliki laporan panik aktif hari ini. Silakan tunggu penyelesaiannya.',
                 'existing_panic' => $existingPanic
             ], 409);
         }
@@ -49,7 +49,7 @@ class PanicController extends Controller
 
         if ($onDutyRelawans->isEmpty()) {
             return response()->json([
-                'message' => 'No emergency responders are currently on duty. Please contact emergency services directly.',
+                'message' => 'Tidak ada relawan yang sedang bertugas saat ini. Silakan hubungi layanan darurat secara langsung.',
                 'emergency_numbers' => [
                     'police' => '110',
                     'fire' => '113', 
@@ -96,7 +96,7 @@ class PanicController extends Controller
         return response()->json([
             'success' => true,
             'panic' => $panic,
-            'message' => 'Emergency alert sent via WhatsApp! Responders on duty have been notified.',
+            'message' => 'Notifikasi darurat terkirim via WhatsApp! Relawan yang bertugas telah diberi tahu.',
             'assigned_relawan' => $onDutyRelawans->map(function ($relawan) {
                 return [
                     'id' => $relawan->id,
@@ -138,8 +138,8 @@ class PanicController extends Controller
 
             if (!$onDuty) {
                 return response()->json([
-                    'message' => 'Access denied. You are not assigned for duty today.',
-                    'hint' => 'Only relawan assigned through weekly patterns can access panic reports.'
+                    'message' => 'Akses ditolak. Anda tidak bertugas hari ini.',
+                    'hint' => 'Hanya relawan yang bertugas melalui pola mingguan yang dapat mengakses laporan panik.'
                 ], 403);
             }
 
@@ -186,8 +186,8 @@ class PanicController extends Controller
             if (!$onDuty) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Access denied. You are not assigned for duty today.',
-                    'hint' => 'Only relawan assigned through weekly patterns can update panic status.'
+                    'message' => 'Akses ditolak. Anda tidak bertugas hari ini.',
+                    'hint' => 'Hanya relawan yang bertugas melalui pola mingguan yang dapat memperbarui status panik.'
                 ], 403);
             }
         }
@@ -201,7 +201,7 @@ class PanicController extends Controller
             if ($panic->status !== PanicReport::STATUS_PENDING) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Can only handle pending panic reports'
+                    'message' => 'Hanya dapat menangani laporan panik yang berstatus pending'
                 ], 400);
             }
 
@@ -211,7 +211,7 @@ class PanicController extends Controller
                 'handled_at' => now(),
             ]);
 
-            $message = 'Panic report is now being handled';
+            $message = 'Laporan panik sedang ditangani';
         } elseif ($newStatus === 'resolved') {
             // Resolve panic (handling → resolved)
             // Cek apakah ini user yang handle atau masih pending
@@ -222,25 +222,25 @@ class PanicController extends Controller
                     'handled_by' => $userId,
                     'handled_at' => now(),
                 ]);
-                $message = 'Panic report resolved directly';
+                $message = 'Laporan panik diselesaikan langsung';
             } elseif ($panic->status === PanicReport::STATUS_HANDLING) {
                 // Untuk relawan: hanya yang handle yang bisa resolve
                 // Untuk admin: bisa resolve siapa saja
                 if ($user->role === 'relawan' && $panic->handled_by !== $userId) {
                     return response()->json([
                         'success' => false,
-                        'message' => 'Can only resolve panic reports that you are handling'
+                        'message' => 'Hanya dapat menyelesaikan laporan panik yang Anda tangani'
                     ], 403);
                 }
 
                 $panic->update([
                     'status' => PanicReport::STATUS_RESOLVED,
                 ]);
-                $message = 'Panic report resolved';
+                $message = 'Laporan panik diselesaikan';
             } else {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Can only resolve pending or handling panic reports'
+                    'message' => 'Hanya dapat menyelesaikan laporan panik yang berstatus pending atau handling'
                 ], 400);
             }
         } elseif ($newStatus === 'cancelled') {
@@ -248,14 +248,14 @@ class PanicController extends Controller
             if ($user->role !== 'admin') {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Only admin can cancel panic reports'
+                    'message' => 'Hanya admin yang dapat membatalkan laporan panik'
                 ], 403);
             }
 
             $panic->update([
                 'status' => PanicReport::STATUS_CANCELLED,
             ]);
-            $message = 'Panic report cancelled by admin';
+            $message = 'Laporan panik dibatalkan oleh admin';
         }
 
         // Status update completed - no email notification needed
@@ -280,7 +280,7 @@ class PanicController extends Controller
         if ($user->role !== 'admin') {
             return response()->json([
                 'success' => false,
-                'message' => 'Only admin can delete panic reports'
+                'message' => 'Hanya admin yang dapat menghapus laporan panik'
             ], 403);
         }
 
@@ -299,19 +299,19 @@ class PanicController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Panic report deleted successfully',
+                'message' => 'Laporan panik berhasil dihapus',
                 'deleted_panic' => $panicData,
                 'deleted_by' => $user->name
             ]);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Panic report not found'
+                'message' => 'Laporan panik tidak ditemukan'
             ], 404);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to delete panic report: ' . $e->getMessage()
+                'message' => 'Gagal menghapus laporan panik: ' . $e->getMessage()
             ], 500);
         }
     }
