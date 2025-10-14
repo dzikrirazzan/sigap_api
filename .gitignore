@@ -6,6 +6,8 @@
 .env
 .env.backup
 .env.production
+.env.local
+.env.*.local
 .phpunit.result.cache
 Homestead.json
 Homestead.yaml
@@ -51,3 +53,29 @@ composer.phar
 
 # Databases
 /database/*.sqlite
+
+# Sensitive files
+*.key
+*.pem
+*.crt
+.env.production
+.env.staging
+credentials.json
+secrets.json
+
+# Deployment scripts (keep only deploy-native.sh)
+deploy-backend.sh
+deploy-frontend.sh
+deploy-nextjs.sh
+
+# Docker files (if using native deployment)
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# Testing and demo files
+*_Old.php
+*_New.php
+*_Backup.php
+*Test*.js
+preview-*.html

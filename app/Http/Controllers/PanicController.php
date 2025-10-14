@@ -52,7 +52,7 @@ class PanicController extends Controller
                 'message' => 'Tidak ada relawan yang sedang bertugas saat ini. Silakan hubungi layanan darurat secara langsung.',
                 'emergency_numbers' => [
                     'police' => '110',
-                    'fire' => '113', 
+                    'fire' => '113',
                     'ambulance' => '118'
                 ]
             ], 503);
@@ -73,7 +73,7 @@ class PanicController extends Controller
         // Send emergency WhatsApp notifications to on-duty relawan
         try {
             $result = $this->whatsAppService->sendEmergencyAlert($panic, $onDutyRelawans);
-            
+
             if (!$result['success']) {
                 Log::warning('WhatsApp notification failed but panic report created', [
                     'panic_id' => $panic->id,
@@ -259,7 +259,7 @@ class PanicController extends Controller
         }
 
         // Status update completed - no email notification needed
-        
+
         $panic->load(['user:id,name,email,no_telp,nik', 'handler:id,name']);
 
         return response()->json([
@@ -385,12 +385,12 @@ class PanicController extends Controller
         // Get week parameter (default: current week)
         // User can specify week offset: 0 = current week, -1 = last week, 1 = next week
         $weekOffset = (int) $request->get('week', 0);
-        
+
         // Calculate start and end of the target week (Monday to Sunday)
         $targetWeek = Carbon::now()->addWeeks($weekOffset);
         $startOfWeek = $targetWeek->copy()->startOfWeek(Carbon::MONDAY);
         $endOfWeek = $targetWeek->copy()->endOfWeek(Carbon::SUNDAY);
-        
+
         $startDate = $startOfWeek->toDateString();
         $endDate = $endOfWeek->toDateString();
 
@@ -410,17 +410,17 @@ class PanicController extends Controller
         $weeklySchedule = [];
         $today = Carbon::now()->toDateString();
         $todayDayOfWeek = strtolower(Carbon::now()->format('l'));
-        
+
         for ($i = 0; $i < 7; $i++) {
             $currentDay = $startOfWeek->copy()->addDays($i);
             $dateString = $currentDay->toDateString();
             $dayOfWeek = strtolower($currentDay->format('l'));
-            
+
             // Check if relawan has shift on this day
             $hasActualShift = isset($actualShifts[$dateString]);
             $hasPattern = isset($patterns[$dayOfWeek]);
             $isScheduled = $hasActualShift || $hasPattern;
-            
+
             // Determine shift source
             $shiftSource = null;
             $shiftId = null;
@@ -431,7 +431,7 @@ class PanicController extends Controller
                 $shiftSource = 'weekly_pattern';
                 $shiftId = $patterns[$dayOfWeek]->id;
             }
-            
+
             $weeklySchedule[] = [
                 'date' => $dateString,
                 'day_of_week' => $dayOfWeek,
@@ -452,7 +452,7 @@ class PanicController extends Controller
         $scheduledDays = collect($weeklySchedule)->where('is_scheduled', true);
         $todaySchedule = collect($weeklySchedule)->firstWhere('is_today', true);
         $isOnDutyToday = $todaySchedule ? $todaySchedule['is_scheduled'] : false;
-        
+
         // Get upcoming shifts (next 7 days from today)
         $upcomingShifts = collect($weeklySchedule)
             ->where('is_future', true)
@@ -508,7 +508,7 @@ class PanicController extends Controller
             case 1:
                 return 'Minggu Depan';
             default:
-                return $weekOffset > 0 
+                return $weekOffset > 0
                     ? $weekOffset . ' minggu ke depan'
                     : abs($weekOffset) . ' minggu yang lalu';
         }
@@ -636,7 +636,6 @@ class PanicController extends Controller
                     ]
                 ]);
             }
-
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
