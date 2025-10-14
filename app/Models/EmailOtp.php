@@ -81,4 +81,46 @@ class EmailOtp extends Model
     {
         return !$this->used && !$this->isExpired();
     }
+
+    /**
+     * Generate a new OTP for password reset
+     */
+    public static function generatePasswordResetOtp($email)
+    {
+        // Delete existing unused OTPs for this email
+        self::where('email', $email)
+            ->where('type', 'password_reset')
+            ->where('used', false)
+            ->delete();
+
+        // Generate 6-digit OTP
+        $otp = str_pad(random_int(100000, 999999), 6, '0', STR_PAD_LEFT);
+
+        return self::create([
+            'email' => $email,
+            'otp' => $otp,
+            'type' => 'password_reset',
+            'expires_at' => Carbon::now()->addMinutes(10), // 10 minutes expiry
+            'used' => false
+        ]);
+    }
+
+    /**
+     * Verify OTP for password reset
+     */
+    public static function verifyPasswordResetOtp($email, $otp)
+    {
+        $otpRecord = self::where('email', $email)
+            ->where('otp', $otp)
+            ->where('type', 'password_reset')
+            ->where('used', false)
+            ->where('expires_at', '>', Carbon::now())
+            ->first();
+
+        if ($otpRecord) {
+            return true;
+        }
+
+        return false;
+    }
 }

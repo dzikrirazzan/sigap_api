@@ -20,6 +20,12 @@ Route::post('/email/send-otp', [AuthController::class, 'sendEmailVerificationOtp
 Route::post('/email/verify-otp', [AuthController::class, 'verifyEmailOtp']);
 Route::post('/email/resend-otp', [AuthController::class, 'resendEmailVerificationOtp']);
 
+// Password Reset Routes (Public - No Authentication Required)
+Route::post('/password/forgot', [AuthController::class, 'sendPasswordResetOtp']);
+Route::post('/password/verify-otp', [AuthController::class, 'verifyPasswordResetOtp']);
+Route::post('/password/reset', [AuthController::class, 'resetPassword']);
+Route::post('/password/resend-otp', [AuthController::class, 'resendPasswordResetOtp']);
+
 // Route terproteksi (untuk semua user terautentikasi)
 Route::middleware('auth:sanctum')->group(function () {
     // Profil user yang login

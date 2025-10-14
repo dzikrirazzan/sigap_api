@@ -151,7 +151,7 @@ class AuthController extends Controller
         $user = User::where('email', $fields['email'])->first();
 
         if (!$user || !Hash::check($fields['password'], $user->password)) {
-            return response()->json(['message' => 'Invalid credentials'], 401);
+            return response()->json(['message' => 'Email atau kata sandi salah. Coba lagi atau klik Lupa kata sandi untuk mengatur ulang.'], 401);
         }
 
         // Email verification disabled for deployment
@@ -443,6 +443,7 @@ class AuthController extends Controller
         return response()->json($result, 200);
     }
 
+
     /**
      * Resend OTP for email verification
      */
@@ -470,5 +471,122 @@ class AuthController extends Controller
         }
 
         return response()->json(['message' => 'OTP resent successfully'], 200);
+    }
+
+    /**
+     * Send Password Reset OTP
+     */
+    public function sendPasswordResetOtp(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email|exists:users,email',
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+
+        $emailOtpService = new EmailOtpService();
+        $result = $emailOtpService->sendPasswordResetOtp($user);
+
+        if ($result['success']) {
+            return response()->json([
+                'message' => 'Password reset OTP has been sent to your email',
+                'expires_in_minutes' => 10
+            ], 200);
+        }
+
+        return response()->json([
+            'message' => $result['message']
+        ], 500);
+    }
+
+    /**
+     * Verify Password Reset OTP
+     */
+    public function verifyPasswordResetOtp(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email|exists:users,email',
+            'otp' => 'required|string|size:6',
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+
+        $emailOtpService = new EmailOtpService();
+        $result = $emailOtpService->verifyPasswordResetOtp($user, $request->otp);
+
+        if ($result['success']) {
+            return response()->json([
+                'message' => 'OTP verified successfully. You can now reset your password.',
+                'email' => $user->email
+            ], 200);
+        }
+
+        return response()->json([
+            'message' => $result['message']
+        ], 400);
+    }
+
+    /**
+     * Reset Password with verified OTP
+     */
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email|exists:users,email',
+            'otp' => 'required|string|size:6',
+            'password' => 'required|string|min:6|confirmed',
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+
+        // Verify OTP one more time
+        $emailOtpService = new EmailOtpService();
+        $result = $emailOtpService->verifyPasswordResetOtp($user, $request->otp);
+
+        if (!$result['success']) {
+            return response()->json([
+                'message' => $result['message']
+            ], 400);
+        }
+
+        // Update password
+        $user->password = bcrypt($request->password);
+        $user->save();
+
+        // Mark OTP as used
+        $emailOtpService->markOtpAsUsed($user->email, $request->otp, 'password_reset');
+
+        // Revoke all tokens for security
+        $user->tokens()->delete();
+
+        return response()->json([
+            'message' => 'Password has been reset successfully. Please login with your new password.'
+        ], 200);
+    }
+
+    /**
+     * Resend Password Reset OTP
+     */
+    public function resendPasswordResetOtp(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email|exists:users,email',
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+
+        $emailOtpService = new EmailOtpService();
+        $result = $emailOtpService->sendPasswordResetOtp($user);
+
+        if ($result['success']) {
+            return response()->json([
+                'message' => 'New password reset OTP has been sent to your email',
+                'expires_in_minutes' => 10
+            ], 200);
+        }
+
+        return response()->json([
+            'message' => $result['message']
+        ], 500);
     }
 }
