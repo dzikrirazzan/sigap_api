@@ -155,7 +155,7 @@ class ReportController extends Controller
         try {
             // Validasi file foto
             $validator = Validator::make($request->all(), [
-                'photo' => 'required|image|max:5120', // max 5MB
+                'photo' => 'required|mimes:jpeg,jpg,png,gif,bmp,webp,heic,heif,svg|max:20480', // max 20MB, support iPhone HEIC/HEIF
             ]);
 
             if ($validator->fails()) {

@@ -17,7 +17,8 @@
                 </p>
 
                 <p style="margin-bottom: 30px;">
-                    Kami menerima permintaan untuk mereset password akun SIGAP UNDIP Anda. Gunakan kode verifikasi di bawah ini untuk mereset password Anda:
+                    Kami menerima permintaan untuk mereset password akun SIGAP UNDIP Anda. Gunakan kode verifikasi di
+                    bawah ini untuk mereset password Anda:
                 </p>
 
                 <!-- OTP Code Box -->
@@ -39,7 +40,8 @@
                 <div
                     style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 6px; padding: 15px; margin: 20px 0;">
                     <p style="margin: 0; color: #856404; font-size: 14px;">
-                        <strong>Peringatan:</strong> Jika Anda tidak meminta reset password ini, silakan abaikan email ini dan hubungi administrator segera untuk keamanan akun Anda.
+                        <strong>Peringatan:</strong> Jika Anda tidak meminta reset password ini, silakan abaikan email
+                        ini dan hubungi administrator segera untuk keamanan akun Anda.
                     </p>
                 </div>
             </div>
