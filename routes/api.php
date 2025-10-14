@@ -8,7 +8,6 @@ use App\Http\Controllers\PanicController;
 use App\Http\Controllers\RelawanShiftController;
 use App\Http\Controllers\RelawanShiftPatternController;
 use App\Http\Controllers\ShiftAutomationController;
-use App\Http\Controllers\WhatsAppTestController;
 
 // Route publik
 Route::post('/register', [AuthController::class, 'register']);
@@ -75,7 +74,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/panic', [PanicController::class, 'adminIndex']);
         Route::delete('/panic/{panicId}', [PanicController::class, 'destroy']);
         Route::get('/relawan-on-duty', [PanicController::class, 'getTodayRelawan']);
-        Route::post('/test-emergency-email', [PanicController::class, 'testEmergencyEmail']);
 
         // ✅ Weekly Pattern Shift Management - Simple & Automatic
         Route::get('/shifts', [RelawanShiftController::class, 'index']);
@@ -99,17 +97,6 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('/logs', [ShiftAutomationController::class, 'getLogs']);
             Route::post('/test', [ShiftAutomationController::class, 'testAutomation']);
         });
-    });
-
-    // WhatsApp Notification Testing Routes (for development/testing)
-    Route::prefix('whatsapp-test')->middleware('auth:sanctum')->group(function () {
-        Route::post('/basic', [WhatsAppTestController::class, 'testBasic']);
-        Route::post('/emergency-alert', [WhatsAppTestController::class, 'testEmergencyAlert']);
-        Route::post('/bulk-message', [WhatsAppTestController::class, 'testBulkMessage']);
-        Route::post('/shift-reminder', [WhatsAppTestController::class, 'testShiftReminder']);
-        Route::post('/custom', [WhatsAppTestController::class, 'sendCustom']);
-        Route::get('/account', [WhatsAppTestController::class, 'checkAccount']);
-        Route::get('/volunteers', [WhatsAppTestController::class, 'getVolunteersWithPhone']);
     });
 });
 

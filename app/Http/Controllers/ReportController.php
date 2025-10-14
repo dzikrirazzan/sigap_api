@@ -14,9 +14,12 @@ class ReportController extends Controller
     /**
      * Menampilkan daftar laporan.
      */
-    public function index(Request $request)
+    public function index()
     {
         try {
+            /** @var \App\Models\User $currentUser */
+            $currentUser = auth()->user();
+
             // Query sederhana tanpa model untuk memeriksa jika ada data
             $dbReports = DB::table('reports')->get();
 
@@ -26,7 +29,7 @@ class ReportController extends Controller
             }
 
             // Jika ada data, kita ambil dengan cara biasa
-            if (auth()->user()->isAdmin() || auth()->user()->isRelawan()) {
+            if ($currentUser->isAdmin() || $currentUser->isRelawan()) {
                 // Admin dan relawan dapat melihat semua laporan
                 $reports = Report::with('user')->latest()->get();
             } else {
@@ -196,10 +199,13 @@ class ReportController extends Controller
     public function show($reportId)
     {
         try {
+            /** @var \App\Models\User $currentUser */
+            $currentUser = auth()->user();
+
             $report = Report::with('user')->findOrFail($reportId);
 
             // Periksa otorisasi
-            if (!auth()->user()->isAdmin() && !auth()->user()->isRelawan() && auth()->id() !== $report->user_id) {
+            if (!$currentUser->isAdmin() && !$currentUser->isRelawan() && auth()->id() !== $report->user_id) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Tidak diizinkan melihat laporan ini'
@@ -248,10 +254,13 @@ class ReportController extends Controller
     public function update(Request $request, $reportId)
     {
         try {
+            /** @var \App\Models\User $currentUser */
+            $currentUser = auth()->user();
+
             $report = Report::findOrFail($reportId);
 
             // Periksa otorisasi
-            if (auth()->user()->isAdmin() || auth()->user()->isRelawan()) {
+            if ($currentUser->isAdmin() || $currentUser->isRelawan()) {
                 // Admin dan relawan dapat memperbarui status dan catatan
                 $validator = Validator::make($request->all(), [
                     'status' => 'sometimes|required|in:pending,in_progress,resolved,rejected',
@@ -345,10 +354,13 @@ class ReportController extends Controller
     public function destroy($reportId)
     {
         try {
+            /** @var \App\Models\User $currentUser */
+            $currentUser = auth()->user();
+
             $report = Report::findOrFail($reportId);
 
             // Periksa otorisasi
-            if (!auth()->user()->isAdmin() && !(auth()->id() === $report->user_id && $report->status === 'pending')) {
+            if (!$currentUser->isAdmin() && !(auth()->id() === $report->user_id && $report->status === 'pending')) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Tidak diizinkan menghapus laporan ini'

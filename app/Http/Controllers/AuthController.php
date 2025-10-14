@@ -17,8 +17,11 @@ class AuthController extends Controller
      */
     public function index()
     {
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+
         // Hanya admin yang bisa lihat semua user
-        if (!auth()->user()->isAdmin()) {
+        if (!$user->isAdmin()) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
@@ -76,7 +79,10 @@ class AuthController extends Controller
      */
     public function registerRelawan(Request $request)
     {
-        if (!auth()->user()->isAdmin()) {
+        /** @var \App\Models\User $currentUser */
+        $currentUser = auth()->user();
+
+        if (!$currentUser->isAdmin()) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
@@ -112,7 +118,10 @@ class AuthController extends Controller
      */
     public function registerAdmin(Request $request)
     {
-        if (!auth()->user()->isAdmin()) {
+        /** @var \App\Models\User $currentUser */
+        $currentUser = auth()->user();
+
+        if (!$currentUser->isAdmin()) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
@@ -222,9 +231,16 @@ class AuthController extends Controller
      */
     public function logout(Request $request)
     {
-        auth()->user()->currentAccessToken()->delete();
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
 
-        auth()->user()->refreshTokens()->delete();
+        // Revoke current access token using tokenable
+        /** @var \Laravel\Sanctum\PersonalAccessToken $token */
+        $token = $request->user()->currentAccessToken();
+        $token->delete();
+
+        // Delete all refresh tokens
+        $user->refreshTokens()->delete();
 
         return response()->json([
             'message' => 'Berhasil logout'
@@ -236,6 +252,9 @@ class AuthController extends Controller
      */
     public function show($id)
     {
+        /** @var \App\Models\User $currentUser */
+        $currentUser = auth()->user();
+
         $user = User::find($id);
 
         if (!$user) {
@@ -244,7 +263,7 @@ class AuthController extends Controller
             ], 404);
         }
 
-        if (!auth()->user()->isAdmin() && auth()->id() !== $user->id) {
+        if (!$currentUser->isAdmin() && auth()->id() !== $user->id) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
@@ -256,6 +275,9 @@ class AuthController extends Controller
      */
     public function update(Request $request, $id)
     {
+        /** @var \App\Models\User $currentUser */
+        $currentUser = auth()->user();
+
         $user = User::find($id);
 
         if (!$user) {
@@ -264,7 +286,7 @@ class AuthController extends Controller
             ], 404);
         }
 
-        if (!auth()->user()->isAdmin() && auth()->id() !== $user->id) {
+        if (!$currentUser->isAdmin() && auth()->id() !== $user->id) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
@@ -288,7 +310,7 @@ class AuthController extends Controller
             ]);
         }
 
-        if (isset($request->role) && auth()->user()->isAdmin()) {
+        if (isset($request->role) && $currentUser->isAdmin()) {
             $user->role = $request->role;
         }
 
@@ -335,6 +357,9 @@ class AuthController extends Controller
      */
     public function destroy($id)
     {
+        /** @var \App\Models\User $currentUser */
+        $currentUser = auth()->user();
+
         $user = User::find($id);
 
         if (!$user) {
@@ -343,7 +368,7 @@ class AuthController extends Controller
             ], 404);
         }
 
-        if (!auth()->user()->isAdmin()) {
+        if (!$currentUser->isAdmin()) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
@@ -367,7 +392,10 @@ class AuthController extends Controller
      */
     public function getAllRelawan()
     {
-        if (!auth()->user()->isAdmin()) {
+        /** @var \App\Models\User $currentUser */
+        $currentUser = auth()->user();
+
+        if (!$currentUser->isAdmin()) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
@@ -381,7 +409,10 @@ class AuthController extends Controller
      */
     public function getAllUsers()
     {
-        if (!auth()->user()->isAdmin()) {
+        /** @var \App\Models\User $currentUser */
+        $currentUser = auth()->user();
+
+        if (!$currentUser->isAdmin()) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 

@@ -295,7 +295,7 @@ class RelawanShiftController extends Controller
 
         // Replace: Delete old and create new
         $oldPattern->delete();
-        
+
         RelawanShiftPattern::create([
             'day_of_week' => $dayOfWeek,
             'relawan_id' => $newRelawanId,
