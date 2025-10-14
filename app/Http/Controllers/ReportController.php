@@ -429,4 +429,82 @@ class ReportController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Bulk delete reports by date range (Admin only)
+     */
+    public function bulkDeleteByDate(Request $request)
+    {
+        try {
+            /** @var \App\Models\User $currentUser */
+            $currentUser = auth()->user();
+
+            if (!$currentUser->isAdmin()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized. Only admin can delete reports.'
+                ], 403);
+            }
+
+            $validator = Validator::make($request->all(), [
+                'start_date' => 'required|date',
+                'end_date' => 'required|date|after_or_equal:start_date',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validasi gagal',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $startDate = \Carbon\Carbon::parse($request->start_date)->startOfDay();
+            $endDate = \Carbon\Carbon::parse($request->end_date)->endOfDay();
+
+            $query = Report::whereBetween('created_at', [$startDate, $endDate]);
+
+            // Optional: filter by status
+            if ($request->has('status') && $request->status) {
+                $query->where('status', $request->status);
+            }
+
+            // Optional: filter by problem_type
+            if ($request->has('problem_type') && $request->problem_type) {
+                $query->where('problem_type', $request->problem_type);
+            }
+
+            $count = $query->count();
+
+            // Get reports for cleanup (delete photos if exists)
+            $reports = $query->get();
+            foreach ($reports as $report) {
+                if ($report->photo_path && Storage::disk('public')->exists($report->photo_path)) {
+                    Storage::disk('public')->delete($report->photo_path);
+                }
+            }
+
+            $query->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => "Successfully deleted {$count} reports",
+                'deleted_count' => $count,
+                'date_range' => [
+                    'start' => $startDate->format('Y-m-d'),
+                    'end' => $endDate->format('Y-m-d')
+                ]
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error saat bulk delete reports', [
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete reports',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

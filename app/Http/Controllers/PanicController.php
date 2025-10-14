@@ -569,4 +569,56 @@ class PanicController extends Controller
 
         return $hasPatternForToday;
     }
+
+    /**
+     * Bulk delete panic reports by date range (Admin only)
+     */
+    public function bulkDeleteByDate(Request $request)
+    {
+        try {
+            /** @var \App\Models\User $currentUser */
+            $currentUser = auth()->user();
+
+            if (!$currentUser->isAdmin()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unauthorized. Only admin can delete panic reports.'
+                ], 403);
+            }
+
+            $request->validate([
+                'start_date' => 'required|date',
+                'end_date' => 'required|date|after_or_equal:start_date',
+            ]);
+
+            $startDate = Carbon::parse($request->start_date)->startOfDay();
+            $endDate = Carbon::parse($request->end_date)->endOfDay();
+
+            $query = PanicReport::whereBetween('created_at', [$startDate, $endDate]);
+
+            // Optional: filter by status
+            if ($request->has('status') && $request->status) {
+                $query->where('status', $request->status);
+            }
+
+            $count = $query->count();
+            $query->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => "Successfully deleted {$count} panic reports",
+                'deleted_count' => $count,
+                'date_range' => [
+                    'start' => $startDate->format('Y-m-d'),
+                    'end' => $endDate->format('Y-m-d')
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete panic reports',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

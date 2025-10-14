@@ -73,16 +73,20 @@ Route::middleware('auth:sanctum')->group(function () {
         // Panic Management
         Route::get('/panic', [PanicController::class, 'adminIndex']);
         Route::delete('/panic/{panicId}', [PanicController::class, 'destroy']);
+        Route::post('/panic/bulk-delete', [PanicController::class, 'bulkDeleteByDate']);
         Route::get('/relawan-on-duty', [PanicController::class, 'getTodayRelawan']);
 
-        // ✅ Weekly Pattern Shift Management - Simple & Automatic
+        // Report Management
+        Route::post('/reports/bulk-delete', [ReportController::class, 'bulkDeleteByDate']);
+
+        // Weekly Pattern Shift Management - Simple & Automatic
         Route::get('/shifts', [RelawanShiftController::class, 'index']);
         Route::get('/shifts/weekly-patterns', [RelawanShiftController::class, 'getWeeklyPatterns']);
         Route::post('/shifts/generate-from-patterns', [RelawanShiftController::class, 'generateFromPatterns']);
         Route::delete('/shifts/date/{date}', [RelawanShiftController::class, 'deleteShiftsByDate']);
         Route::get('/relawans', [RelawanShiftController::class, 'getRelawans']);
 
-        // ✅ Weekly Pattern Management (Monday-Sunday assignments)
+        // Weekly Pattern Management (Monday-Sunday assignments)
         Route::post('/shifts/set-day-pattern', [RelawanShiftController::class, 'setDayPattern']);
         Route::post('/shifts/add-relawan-to-day', [RelawanShiftController::class, 'addRelawanToDay']);
         Route::put('/shifts/replace-relawan-on-day', [RelawanShiftController::class, 'replaceRelawanOnDay']);
