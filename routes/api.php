@@ -112,3 +112,15 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/volunteers', [WhatsAppTestController::class, 'getVolunteersWithPhone']);
     });
 });
+
+// Debug endpoint to check mail configuration
+Route::get('/debug/mail-config', function () {
+    return response()->json([
+        'mailer' => config('mail.default'),
+        'host' => config('mail.mailers.smtp.host'),
+        'port' => config('mail.mailers.smtp.port'),
+        'username' => config('mail.mailers.smtp.username') ? 'Set (hidden)' : 'Not set',
+        'from_address' => config('mail.from.address'),
+        'from_name' => config('mail.from.name'),
+    ]);
+});

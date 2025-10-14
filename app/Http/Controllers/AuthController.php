@@ -49,25 +49,23 @@ class AuthController extends Controller
             'jurusan' => $fields['jurusan'] ?? null,
         ]);
 
-        // Email verification disabled for deployment
-        // $otpService = new \App\Services\EmailOtpService();
-        // $otpSent = $otpService->sendEmailVerificationOtp($user->email);
+        // Send email verification OTP
+        $otpService = new \App\Services\EmailOtpService();
+        $otpSent = $otpService->sendEmailVerificationOtp($user->email);
 
-        // if (!$otpSent) {
-        //     return response()->json([
-        //         'message' => 'Registration successful but failed to send verification email. Please try to resend OTP.',
-        //         'user' => $user,
-        //         'email_verification_required' => true,
-        //     ], 201);
-        // }
-
-        // Mark email as verified automatically
-        $user->markEmailAsVerified();
+        if (!$otpSent) {
+            return response()->json([
+                'message' => 'Registration successful but failed to send verification email. Please try to resend OTP.',
+                'user' => $user,
+                'email_verification_required' => true,
+            ], 201);
+        }
 
         $response = [
-            'message' => 'Registration successful. You can now login.',
+            'message' => 'Registration successful. Please check your email for OTP verification code.',
             'user' => $user,
-            'email_verification_required' => false,
+            'email_verification_required' => true,
+            'otp_expires_in_minutes' => 10,
         ];
 
         return response($response, 201);
@@ -154,14 +152,14 @@ class AuthController extends Controller
             return response()->json(['message' => 'Email atau kata sandi salah. Coba lagi atau klik Lupa kata sandi untuk mengatur ulang.'], 401);
         }
 
-        // Email verification disabled for deployment
-        // if ($user->role === User::ROLE_USER && !$user->hasVerifiedEmail()) {
-        //     return response()->json([
-        //         'message' => 'Please verify your email address first.',
-        //         'email_verification_required' => true,
-        //         'user_id' => $user->id
-        //     ], 403);
-        // }
+        // Check email verification for regular users
+        if ($user->role === User::ROLE_USER && !$user->hasVerifiedEmail()) {
+            return response()->json([
+                'message' => 'Please verify your email address first. Check your inbox for OTP code.',
+                'email_verification_required' => true,
+                'email' => $user->email
+            ], 403);
+        }
 
         // Delete old tokens
         $user->tokens()->delete();
