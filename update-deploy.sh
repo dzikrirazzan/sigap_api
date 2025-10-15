@@ -100,7 +100,11 @@ fi
 
 cd $PROJECT_DIR
 
-# 1. Backup current state (optional but recommended)
+# 1. Fix git ownership issue
+print_status "Fixing git ownership..."
+git config --global --add safe.directory "$PROJECT_DIR" 2>/dev/null || true
+
+# 2. Backup current state (optional but recommended)
 print_status "Creating backup..."
 BACKUP_DIR="/var/www/backups"
 mkdir -p $BACKUP_DIR
@@ -112,60 +116,61 @@ tar -czf "$BACKUP_DIR/emergency_api_backup_$TIMESTAMP.tar.gz" \
     . 2>/dev/null || true
 print_success "Backup created: emergency_api_backup_$TIMESTAMP.tar.gz"
 
-# 2. Put application in maintenance mode
+# 3. Put application in maintenance mode
 print_status "Enabling maintenance mode..."
-php artisan down --message="Updating application, please wait..." --retry=60 || true
+# Laravel 10+ doesn't support --message option, use --render instead
+php artisan down --retry=60 2>/dev/null || php artisan down || true
 
-# 3. Pull latest code from GitHub
+# 4. Pull latest code from GitHub
 print_status "Pulling latest code from GitHub..."
-git fetch origin
+git fetch origin 2>/dev/null || true
 git pull origin main
 
-# 4. Install/update Composer dependencies
+# 5. Install/update Composer dependencies
 print_status "Installing/updating Composer dependencies..."
 composer install --no-dev --optimize-autoloader --no-interaction
 
-# 5. Run database migrations (if any)
+# 6. Run database migrations (if any)
 print_status "Running database migrations..."
 php artisan migrate --force
 
-# 6. Clear all caches
+# 7. Clear all caches
 print_status "Clearing application caches..."
 php artisan config:clear
 php artisan route:clear
 php artisan view:clear
 php artisan cache:clear
 
-# 7. Rebuild optimized caches
+# 8. Rebuild optimized caches
 print_status "Rebuilding optimized caches..."
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
 
-# 8. Create storage link (if not exists)
+# 9. Create storage link (if not exists)
 print_status "Ensuring storage link exists..."
-php artisan storage:link || true
+php artisan storage:link 2>/dev/null || true
 
-# 9. Fix permissions
+# 10. Fix permissions
 print_status "Fixing permissions..."
 chown -R www-data:www-data $PROJECT_DIR
 chmod -R 755 $PROJECT_DIR
 chmod -R 775 $PROJECT_DIR/storage
 chmod -R 775 $PROJECT_DIR/bootstrap/cache
 
-# 10. Restart PHP-FPM
+# 11. Restart PHP-FPM
 print_status "Restarting PHP-FPM..."
 systemctl restart php8.2-fpm
 
-# 11. Reload Nginx (graceful reload, no downtime)
+# 12. Reload Nginx (graceful reload, no downtime)
 print_status "Reloading Nginx..."
 systemctl reload nginx
 
-# 12. Bring application back online
+# 13. Bring application back online
 print_status "Disabling maintenance mode..."
 php artisan up
 
-# 13. Check service status
+# 14. Check service status
 print_status "Checking service status..."
 echo ""
 print_status "=== Service Status ==="
