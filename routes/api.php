@@ -9,6 +9,16 @@ use App\Http\Controllers\RelawanShiftController;
 use App\Http\Controllers\RelawanShiftPatternController;
 use App\Http\Controllers\ShiftAutomationController;
 
+// Health check endpoint
+Route::get('/health', function () {
+    return response()->json([
+        'status' => 'ok',
+        'service' => 'SIGAP Emergency API',
+        'timestamp' => now()->toIso8601String(),
+        'version' => '1.0.0'
+    ]);
+});
+
 // Route publik
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login'])->name('api.login');
