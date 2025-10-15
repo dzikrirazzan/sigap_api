@@ -53,7 +53,7 @@ class AuthController extends Controller
         ]);
 
         // Send email verification OTP
-        $otpService = new \App\Services\EmailOtpService();
+        $otpService = new EmailOtpService();
         $otpSent = $otpService->sendEmailVerificationOtp($user->email);
 
         if (!$otpSent) {

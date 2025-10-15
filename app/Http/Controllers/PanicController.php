@@ -10,6 +10,7 @@ use App\Models\RelawanShiftPattern;
 use App\Services\WhatsAppService;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
+use Carbon\CarbonInterface;
 
 class PanicController extends Controller
 {
@@ -388,8 +389,8 @@ class PanicController extends Controller
 
         // Calculate start and end of the target week (Monday to Sunday)
         $targetWeek = Carbon::now()->addWeeks($weekOffset);
-        $startOfWeek = $targetWeek->copy()->startOfWeek(Carbon::MONDAY);
-        $endOfWeek = $targetWeek->copy()->endOfWeek(Carbon::SUNDAY);
+        $startOfWeek = $targetWeek->copy()->startOfWeek(CarbonInterface::MONDAY);
+        $endOfWeek = $targetWeek->copy()->endOfWeek(CarbonInterface::SUNDAY);
 
         $startDate = $startOfWeek->toDateString();
         $endDate = $endOfWeek->toDateString();
