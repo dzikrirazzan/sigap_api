@@ -19,7 +19,7 @@ class ShiftAutomationController extends Controller
     {
         $isEnabled = Cache::get(self::AUTOMATION_CONFIG_KEY, true); // Default enabled
         $lastGeneration = Cache::get(self::LAST_GENERATION_KEY);
-        
+
         return response()->json([
             'automation_enabled' => $isEnabled,
             'last_automatic_generation' => $lastGeneration,
@@ -48,16 +48,16 @@ class ShiftAutomationController extends Controller
         ]);
 
         $enabled = $request->enabled;
-        
+
         Cache::put(self::AUTOMATION_CONFIG_KEY, $enabled, now()->addYears(1));
-        
+
         return response()->json([
             'success' => true,
-            'message' => $enabled ? 'Shift automation enabled' : 'Shift automation disabled',
+            'message' => $enabled ? 'Otomasi shift diaktifkan' : 'Otomasi shift dinonaktifkan',
             'automation_enabled' => $enabled,
-            'note' => $enabled 
-                ? 'Shifts will be automatically generated daily at 2 AM' 
-                : 'Automatic generation disabled. You can still generate shifts manually.'
+            'note' => $enabled
+                ? 'Shift akan dibuat secara otomatis setiap hari pukul 2 pagi'
+                : 'Pembuatan otomatis dinonaktifkan. Anda masih dapat membuat shift secara manual.'
         ]);
     }
 
@@ -95,7 +95,7 @@ class ShiftAutomationController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => "Force generation completed for {$days} days",
+            'message' => "Pembuatan paksa selesai untuk {$days} hari",
             'parameters' => [
                 'days' => $days,
                 'reason' => $reason,
@@ -112,17 +112,17 @@ class ShiftAutomationController extends Controller
     public function getLogs(Request $request)
     {
         $logFile = storage_path('logs/shift-generation.log');
-        
+
         if (!file_exists($logFile)) {
             return response()->json([
                 'logs' => [],
-                'message' => 'No generation logs found'
+                'message' => 'Log pembuatan shift tidak ditemukan'
             ]);
         }
 
         $lines = file($logFile);
         $recentLines = array_slice($lines, -50); // Last 50 lines
-        
+
         return response()->json([
             'logs' => array_map('trim', $recentLines),
             'total_lines' => count($lines),
@@ -146,9 +146,9 @@ class ShiftAutomationController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Automation test completed using simplified system',
+            'message' => 'Tes otomasi selesai menggunakan sistem yang disederhanakan',
             'test_results' => $output,
-            'note' => 'System automatically skips existing shifts and generates only new ones'
+            'note' => 'Sistem secara otomatis melewati shift yang ada dan hanya membuat yang baru'
         ]);
     }
 
@@ -158,11 +158,11 @@ class ShiftAutomationController extends Controller
     private function formatBytes($size, $precision = 2)
     {
         $units = ['B', 'KB', 'MB', 'GB'];
-        
+
         for ($i = 0; $size > 1024 && $i < count($units) - 1; $i++) {
             $size /= 1024;
         }
-        
+
         return round($size, $precision) . ' ' . $units[$i];
     }
 }

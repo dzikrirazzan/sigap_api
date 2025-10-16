@@ -158,7 +158,7 @@ class PanicController extends Controller
         }
 
         // Jika bukan admin atau relawan
-        return response()->json(['message' => 'Unauthorized. Admin or Relawan access required.'], 403);
+        return response()->json(['message' => 'Tidak memiliki akses. Hanya admin atau relawan yang diizinkan'], 403);
     }
 
     // Relawan & Admin update status panic report (handling/resolved/cancelled)
@@ -380,7 +380,7 @@ class PanicController extends Controller
 
         // Pastikan yang akses adalah relawan
         if ($user->role !== User::ROLE_RELAWAN) {
-            return response()->json(['message' => 'Access denied. Only relawan can access this endpoint.'], 403);
+            return response()->json(['message' => 'Akses ditolak. Hanya relawan yang dapat mengakses endpoint ini'], 403);
         }
 
         // Get week parameter (default: current week)
@@ -583,7 +583,7 @@ class PanicController extends Controller
             if (!$currentUser->isAdmin()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Unauthorized. Only admin can delete panic reports.'
+                    'message' => 'Tidak memiliki akses. Hanya admin yang dapat menghapus laporan panik'
                 ], 403);
             }
 
@@ -607,7 +607,7 @@ class PanicController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => "Successfully deleted {$count} panic reports",
+                'message' => "Berhasil menghapus {$count} laporan panik",
                 'deleted_count' => $count,
                 'date_range' => [
                     'start' => $startDate->format('Y-m-d'),
@@ -617,7 +617,7 @@ class PanicController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to delete panic reports',
+                'message' => 'Gagal menghapus laporan panik',
                 'error' => $e->getMessage()
             ], 500);
         }

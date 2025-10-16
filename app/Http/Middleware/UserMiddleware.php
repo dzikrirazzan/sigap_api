@@ -19,7 +19,7 @@ class UserMiddleware
     {
         if (!auth()->check() || auth()->user()->role !== 'user') {
             return response()->json([
-                'message' => 'Unauthorized. User access required.'
+                'message' => 'Tidak memiliki akses. Hanya user yang diizinkan.'
             ], 403);
         }
 

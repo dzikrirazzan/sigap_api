@@ -61,14 +61,14 @@ class RelawanShiftPatternController extends Controller
             $dayOfWeek = RelawanShiftPattern::getDayFromNumber($dayInput);
             if (!$dayOfWeek) {
                 return response()->json([
-                    'message' => 'Invalid day number. Use 1-7 (1=Monday, 7=Sunday) or day names (monday, tuesday, etc.)'
+                    'message' => 'Nomor hari tidak valid. Gunakan 1-7 (1=Senin, 7=Minggu) atau nama hari (monday, tuesday, dst)'
                 ], 400);
             }
         } else {
             $dayOfWeek = $dayInput;
             if (!array_key_exists($dayOfWeek, RelawanShiftPattern::DAYS)) {
                 return response()->json([
-                    'message' => 'Invalid day name. Use: ' . implode(', ', array_keys(RelawanShiftPattern::DAYS))
+                    'message' => 'Nama hari tidak valid. Gunakan: ' . implode(', ', array_keys(RelawanShiftPattern::DAYS))
                 ], 400);
             }
         }
@@ -81,7 +81,7 @@ class RelawanShiftPatternController extends Controller
             ->get();
 
         if ($relawans->count() !== count($relawanIds)) {
-            return response()->json(['message' => 'Some users are not relawan'], 400);
+            return response()->json(['message' => 'Beberapa pengguna bukan relawan'], 400);
         }
 
         // Hapus pattern yang sudah ada untuk hari ini
@@ -101,7 +101,7 @@ class RelawanShiftPatternController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => "Pattern for {$dayName} updated successfully",
+            'message' => "Pola untuk {$dayName} berhasil diperbarui",
             'day' => $dayName,
             'day_key' => $dayOfWeek,
             'patterns' => RelawanShiftPattern::where('day_of_week', $dayOfWeek)
@@ -124,14 +124,14 @@ class RelawanShiftPatternController extends Controller
             $dayOfWeek = RelawanShiftPattern::getDayFromNumber($dayInput);
             if (!$dayOfWeek) {
                 return response()->json([
-                    'message' => 'Invalid day number. Use 1-7 (1=Monday, 7=Sunday) or day names (monday, tuesday, etc.)'
+                    'message' => 'Nomor hari tidak valid. Gunakan 1-7 (1=Senin, 7=Minggu) atau nama hari (monday, tuesday, dst)'
                 ], 400);
             }
         } else {
             $dayOfWeek = $dayInput;
             if (!array_key_exists($dayOfWeek, RelawanShiftPattern::DAYS)) {
                 return response()->json([
-                    'message' => 'Invalid day name. Use: ' . implode(', ', array_keys(RelawanShiftPattern::DAYS))
+                    'message' => 'Nama hari tidak valid. Gunakan: ' . implode(', ', array_keys(RelawanShiftPattern::DAYS))
                 ], 400);
             }
         }
@@ -144,7 +144,7 @@ class RelawanShiftPatternController extends Controller
             ->first();
 
         if (!$relawan) {
-            return response()->json(['message' => 'User is not a relawan'], 400);
+            return response()->json(['message' => 'Pengguna bukan relawan'], 400);
         }
 
         // Cek apakah sudah ada pattern untuk relawan ini di hari ini
@@ -154,7 +154,7 @@ class RelawanShiftPatternController extends Controller
 
         if ($existingPattern) {
             return response()->json([
-                'message' => "Relawan {$relawan->name} already has pattern for " . RelawanShiftPattern::DAYS[$dayOfWeek]
+                'message' => "Relawan {$relawan->name} sudah memiliki pola untuk " . RelawanShiftPattern::DAYS[$dayOfWeek]
             ], 400);
         }
 
@@ -166,7 +166,7 @@ class RelawanShiftPatternController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => "Added {$relawan->name} to " . RelawanShiftPattern::DAYS[$dayOfWeek] . " pattern",
+            'message' => "Berhasil menambahkan {$relawan->name} ke pola " . RelawanShiftPattern::DAYS[$dayOfWeek],
             'pattern' => $pattern->load('relawan:id,name,email')
         ]);
     }
@@ -185,14 +185,14 @@ class RelawanShiftPatternController extends Controller
             $dayOfWeek = RelawanShiftPattern::getDayFromNumber($dayInput);
             if (!$dayOfWeek) {
                 return response()->json([
-                    'message' => 'Invalid day number. Use 1-7 (1=Monday, 7=Sunday) or day names (monday, tuesday, etc.)'
+                    'message' => 'Nomor hari tidak valid. Gunakan 1-7 (1=Senin, 7=Minggu) atau nama hari (monday, tuesday, dst)'
                 ], 400);
             }
         } else {
             $dayOfWeek = $dayInput;
             if (!array_key_exists($dayOfWeek, RelawanShiftPattern::DAYS)) {
                 return response()->json([
-                    'message' => 'Invalid day name. Use: ' . implode(', ', array_keys(RelawanShiftPattern::DAYS))
+                    'message' => 'Nama hari tidak valid. Gunakan: ' . implode(', ', array_keys(RelawanShiftPattern::DAYS))
                 ], 400);
             }
         }
@@ -205,7 +205,7 @@ class RelawanShiftPatternController extends Controller
 
         if (!$pattern) {
             return response()->json([
-                'message' => 'Pattern not found for this relawan on this day'
+                'message' => 'Pola tidak ditemukan untuk relawan ini pada hari ini'
             ], 404);
         }
 
@@ -216,7 +216,7 @@ class RelawanShiftPatternController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => "Removed {$relawanName} from {$dayName} pattern",
+            'message' => "Berhasil menghapus {$relawanName} dari pola {$dayName}",
             'deleted_pattern' => [
                 'relawan_name' => $relawanName,
                 'day' => $dayName,
@@ -239,7 +239,7 @@ class RelawanShiftPatternController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => "Pattern {$status} for {$pattern->relawan->name} on {$dayName}",
+            'message' => "Pola {$status} untuk {$pattern->relawan->name} pada {$dayName}",
             'pattern' => $pattern
         ]);
     }
@@ -248,7 +248,7 @@ class RelawanShiftPatternController extends Controller
     public function clearDayPattern($dayOfWeek)
     {
         if (!array_key_exists($dayOfWeek, RelawanShiftPattern::DAYS)) {
-            return response()->json(['message' => 'Invalid day of week'], 400);
+            return response()->json(['message' => 'Hari dalam seminggu tidak valid'], 400);
         }
 
         $deletedCount = RelawanShiftPattern::where('day_of_week', $dayOfWeek)->delete();
@@ -256,7 +256,7 @@ class RelawanShiftPatternController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => "Cleared all patterns for {$dayName}",
+            'message' => "Berhasil menghapus semua pola untuk {$dayName}",
             'deleted_count' => $deletedCount,
             'day' => $dayName
         ]);
@@ -266,7 +266,7 @@ class RelawanShiftPatternController extends Controller
     public function showDayPattern($dayOfWeek)
     {
         if (!array_key_exists($dayOfWeek, RelawanShiftPattern::DAYS)) {
-            return response()->json(['message' => 'Invalid day of week'], 400);
+            return response()->json(['message' => 'Hari dalam seminggu tidak valid'], 400);
         }
 
         $patterns = RelawanShiftPattern::where('day_of_week', $dayOfWeek)
@@ -305,14 +305,14 @@ class RelawanShiftPatternController extends Controller
                 $dayOfWeek = RelawanShiftPattern::getDayFromNumber($dayInput);
                 if (!$dayOfWeek) {
                     return response()->json([
-                        'message' => "Invalid day number in pattern {$index}. Use 1-7 (1=Monday, 7=Sunday) or day names (monday, tuesday, etc.)"
+                        'message' => "Nomor hari tidak valid pada pola {$index}. Gunakan 1-7 (1=Senin, 7=Minggu) atau nama hari (monday, tuesday, dst)"
                     ], 400);
                 }
             } else {
                 $dayOfWeek = $dayInput;
                 if (!array_key_exists($dayOfWeek, RelawanShiftPattern::DAYS)) {
                     return response()->json([
-                        'message' => "Invalid day name in pattern {$index}. Use: " . implode(', ', array_keys(RelawanShiftPattern::DAYS))
+                        'message' => "Nama hari tidak valid pada pola {$index}. Gunakan: " . implode(', ', array_keys(RelawanShiftPattern::DAYS))
                     ], 400);
                 }
             }
@@ -326,7 +326,7 @@ class RelawanShiftPatternController extends Controller
 
             if ($relawans->count() !== count($relawanIds)) {
                 return response()->json([
-                    'message' => "Some users are not relawan for day: " . RelawanShiftPattern::DAYS[$dayOfWeek]
+                    'message' => "Beberapa pengguna bukan relawan untuk hari: " . RelawanShiftPattern::DAYS[$dayOfWeek]
                 ], 400);
             }
 
@@ -355,7 +355,7 @@ class RelawanShiftPatternController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => "Bulk pattern update completed",
+            'message' => "Pembaruan pola massal selesai",
             'total_patterns_created' => $totalCreated,
             'results' => $results
         ]);

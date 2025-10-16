@@ -29,9 +29,9 @@ class RelawanShiftController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => "Generated shifts for {$days} days using weekly patterns",
+            'message' => "Berhasil membuat shift untuk {$days} hari menggunakan pola mingguan",
             'command_output' => $output,
-            'note' => 'Weekly patterns automatically loop. Admin can modify patterns for each day of the week.'
+            'note' => 'Pola mingguan berulang secara otomatis. Admin dapat memodifikasi pola untuk setiap hari dalam seminggu.'
         ]);
     }
 
@@ -81,7 +81,7 @@ class RelawanShiftController extends Controller
             ->get();
 
         if ($relawans->count() !== count($relawanIds)) {
-            return response()->json(['message' => 'Some users are not relawan'], 400);
+            return response()->json(['message' => 'Beberapa pengguna bukan relawan'], 400);
         }
 
         // ✅ Delete old patterns for this day and insert new ones
@@ -99,7 +99,7 @@ class RelawanShiftController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => "Updated {$dayOfWeek} pattern with " . count($relawanIds) . " relawan",
+            'message' => "Berhasil memperbarui pola {$dayOfWeek} dengan " . count($relawanIds) . " relawan",
             'day_of_week' => $dayOfWeek,
             'relawan_assigned' => $relawans->pluck('name'),
             'patterns_created' => count($newPatterns)
@@ -124,7 +124,7 @@ class RelawanShiftController extends Controller
 
         if (!$pattern) {
             return response()->json([
-                'message' => "Relawan not found in {$dayOfWeek} pattern"
+                'message' => "Relawan tidak ditemukan dalam pola {$dayOfWeek}"
             ], 404);
         }
 
@@ -133,7 +133,7 @@ class RelawanShiftController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => "Removed {$relawanName} from {$dayOfWeek} pattern",
+            'message' => "Berhasil menghapus {$relawanName} dari pola {$dayOfWeek}",
             'day_of_week' => $dayOfWeek,
             'removed_relawan' => $relawanName
         ]);
@@ -156,7 +156,7 @@ class RelawanShiftController extends Controller
             ->first();
 
         if (!$relawan) {
-            return response()->json(['message' => 'User is not a relawan'], 400);
+            return response()->json(['message' => 'Pengguna bukan relawan'], 400);
         }
 
         // Check if already exists
@@ -166,7 +166,7 @@ class RelawanShiftController extends Controller
 
         if ($existing) {
             return response()->json([
-                'message' => "{$relawan->name} is already assigned to {$dayOfWeek}"
+                'message' => "{$relawan->name} sudah ditugaskan pada {$dayOfWeek}"
             ], 400);
         }
 
@@ -179,7 +179,7 @@ class RelawanShiftController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => "Added {$relawan->name} to {$dayOfWeek} pattern",
+            'message' => "Berhasil menambahkan {$relawan->name} ke pola {$dayOfWeek}",
             'day_of_week' => $dayOfWeek,
             'added_relawan' => $relawan->name
         ]);
@@ -214,7 +214,7 @@ class RelawanShiftController extends Controller
         return response()->json([
             'success' => true,
             'weekly_patterns' => $weeklySchedule,
-            'note' => 'These patterns repeat automatically every week'
+            'note' => 'Pola ini berulang secara otomatis setiap minggu'
         ]);
     }
 
@@ -240,8 +240,8 @@ class RelawanShiftController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => "Deleted {$deletedCount} shifts for {$date}",
-            'note' => 'Run generate-from-patterns to recreate shifts from weekly patterns'
+            'message' => "Berhasil menghapus {$deletedCount} shift untuk tanggal {$date}",
+            'note' => 'Jalankan generate-from-patterns untuk membuat ulang shift dari pola mingguan'
         ]);
     }
 
@@ -268,7 +268,7 @@ class RelawanShiftController extends Controller
             ->first();
 
         if (!$oldRelawan || !$newRelawan) {
-            return response()->json(['message' => 'Both users must be relawan'], 400);
+            return response()->json(['message' => 'Kedua pengguna harus relawan'], 400);
         }
 
         // Check if old relawan exists in pattern
@@ -278,7 +278,7 @@ class RelawanShiftController extends Controller
 
         if (!$oldPattern) {
             return response()->json([
-                'message' => "{$oldRelawan->name} is not assigned to {$dayOfWeek}"
+                'message' => "{$oldRelawan->name} tidak ditugaskan pada {$dayOfWeek}"
             ], 400);
         }
 
@@ -289,7 +289,7 @@ class RelawanShiftController extends Controller
 
         if ($existingNewPattern) {
             return response()->json([
-                'message' => "{$newRelawan->name} is already assigned to {$dayOfWeek}"
+                'message' => "{$newRelawan->name} sudah ditugaskan pada {$dayOfWeek}"
             ], 400);
         }
 
@@ -304,7 +304,7 @@ class RelawanShiftController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => "Replaced {$oldRelawan->name} with {$newRelawan->name} on {$dayOfWeek}",
+            'message' => "Berhasil mengganti {$oldRelawan->name} dengan {$newRelawan->name} pada {$dayOfWeek}",
             'day_of_week' => $dayOfWeek,
             'old_relawan' => $oldRelawan->name,
             'new_relawan' => $newRelawan->name
@@ -334,7 +334,7 @@ class RelawanShiftController extends Controller
             ->first();
 
         if (!$oldRelawan || !$newRelawan) {
-            return response()->json(['message' => 'Both users must be relawan'], 400);
+            return response()->json(['message' => 'Kedua pengguna harus relawan'], 400);
         }
 
         // Find the pattern to update
@@ -344,7 +344,7 @@ class RelawanShiftController extends Controller
 
         if (!$pattern) {
             return response()->json([
-                'message' => "{$oldRelawan->name} is not assigned to {$dayOfWeek}"
+                'message' => "{$oldRelawan->name} tidak ditugaskan pada {$dayOfWeek}"
             ], 400);
         }
 
@@ -355,7 +355,7 @@ class RelawanShiftController extends Controller
 
         if ($existingNewPattern) {
             return response()->json([
-                'message' => "{$newRelawan->name} is already assigned to {$dayOfWeek}"
+                'message' => "{$newRelawan->name} sudah ditugaskan pada {$dayOfWeek}"
             ], 400);
         }
 
@@ -366,7 +366,7 @@ class RelawanShiftController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => "Updated assignment on {$dayOfWeek}: {$oldRelawan->name} → {$newRelawan->name}",
+            'message' => "Berhasil memperbarui penugasan pada {$dayOfWeek}: {$oldRelawan->name} → {$newRelawan->name}",
             'day_of_week' => $dayOfWeek,
             'old_relawan' => $oldRelawan->name,
             'new_relawan' => $newRelawan->name,

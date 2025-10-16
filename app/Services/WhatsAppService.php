@@ -58,7 +58,7 @@ class WhatsAppService
             return [
                 'success' => $response->successful() && isset($result['status']) && $result['status'] === true,
                 'data' => $result,
-                'message' => $result['reason'] ?? 'Message sent successfully'
+                'message' => $result['reason'] ?? 'Pesan berhasil dikirim'
             ];
         } catch (\Exception $e) {
             Log::error('WhatsApp send error', [
@@ -117,7 +117,7 @@ class WhatsAppService
             return [
                 'success' => $response->successful() && isset($result['status']) && $result['status'] === true,
                 'data' => $result,
-                'message' => $result['reason'] ?? 'Bulk message sent successfully'
+                'message' => $result['reason'] ?? 'Pesan massal berhasil dikirim'
             ];
         } catch (\Exception $e) {
             Log::error('WhatsApp bulk send error', [
@@ -141,7 +141,7 @@ class WhatsAppService
         if (empty($onDutyVolunteers)) {
             return [
                 'success' => false,
-                'message' => 'No volunteers on duty to notify'
+                'message' => 'Tidak ada relawan yang bertugas untuk diberitahu'
             ];
         }
 
@@ -160,7 +160,7 @@ class WhatsAppService
         if (empty($targets)) {
             return [
                 'success' => false,
-                'message' => 'No volunteers with phone numbers found'
+                'message' => 'Tidak ada relawan dengan nomor telepon yang ditemukan'
             ];
         }
 
@@ -220,7 +220,7 @@ class WhatsAppService
 
         return [
             'success' => false,
-            'message' => 'Shift reminder feature is currently disabled',
+            'message' => 'Fitur pengingat shift saat ini dinonaktifkan',
             'disabled' => true
         ];
     }

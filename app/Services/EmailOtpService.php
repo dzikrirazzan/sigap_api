@@ -50,7 +50,7 @@ class EmailOtpService
             if (!$isValidOtp) {
                 return [
                     'success' => false,
-                    'message' => 'Invalid or expired OTP'
+                    'message' => 'Kode OTP tidak valid atau sudah kedaluwarsa'
                 ];
             }
 
@@ -60,7 +60,7 @@ class EmailOtpService
             if (!$user) {
                 return [
                     'success' => false,
-                    'message' => 'User not found'
+                    'message' => 'Pengguna tidak ditemukan'
                 ];
             }
 

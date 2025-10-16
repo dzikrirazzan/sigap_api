@@ -442,7 +442,7 @@ class ReportController extends Controller
             if (!$currentUser->isAdmin()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Unauthorized. Only admin can delete reports.'
+                    'message' => 'Tidak memiliki akses. Hanya admin yang dapat menghapus laporan'
                 ], 403);
             }
 
@@ -488,7 +488,7 @@ class ReportController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => "Successfully deleted {$count} reports",
+                'message' => "Berhasil menghapus {$count} laporan",
                 'deleted_count' => $count,
                 'date_range' => [
                     'start' => $startDate->format('Y-m-d'),
@@ -502,7 +502,7 @@ class ReportController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to delete reports',
+                'message' => 'Gagal menghapus laporan',
                 'error' => $e->getMessage()
             ], 500);
         }

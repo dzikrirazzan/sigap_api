@@ -22,7 +22,7 @@ class AuthController extends Controller
 
         // Hanya admin yang bisa lihat semua user
         if (!$user->isAdmin()) {
-            return response()->json(['message' => 'Unauthorized'], 403);
+            return response()->json(['message' => 'Tidak memiliki akses'], 403);
         }
 
         return response()->json(User::latest()->get());
@@ -83,7 +83,7 @@ class AuthController extends Controller
         $currentUser = auth()->user();
 
         if (!$currentUser->isAdmin()) {
-            return response()->json(['message' => 'Unauthorized'], 403);
+            return response()->json(['message' => 'Tidak memiliki akses'], 403);
         }
 
         $fields = $request->validate([
@@ -122,7 +122,7 @@ class AuthController extends Controller
         $currentUser = auth()->user();
 
         if (!$currentUser->isAdmin()) {
-            return response()->json(['message' => 'Unauthorized'], 403);
+            return response()->json(['message' => 'Tidak memiliki akses'], 403);
         }
 
         $fields = $request->validate([
@@ -164,7 +164,7 @@ class AuthController extends Controller
         // Check email verification for regular users
         if ($user->role === User::ROLE_USER && !$user->hasVerifiedEmail()) {
             return response()->json([
-                'message' => 'Please verify your email address first. Check your inbox for OTP code.',
+                'message' => 'Silakan verifikasi email Anda terlebih dahulu. Cek inbox Anda untuk kode OTP.',
                 'email_verification_required' => true,
                 'email' => $user->email
             ], 403);
@@ -202,12 +202,12 @@ class AuthController extends Controller
         $refreshToken = RefreshToken::where('token', $request->refresh_token)->first();
 
         if (!$refreshToken) {
-            return response()->json(['message' => 'Invalid refresh token'], 401);
+            return response()->json(['message' => 'Token refresh tidak valid'], 401);
         }
 
         if ($refreshToken->isExpired()) {
             $refreshToken->delete();
-            return response()->json(['message' => 'Refresh token expired'], 401);
+            return response()->json(['message' => 'Token refresh sudah kedaluwarsa'], 401);
         }
 
         $user = $refreshToken->user;
@@ -243,7 +243,7 @@ class AuthController extends Controller
         $user->refreshTokens()->delete();
 
         return response()->json([
-            'message' => 'Berhasil logout'
+            'message' => 'Berhasil keluar dari sistem SIGAP UNDIP'
         ]);
     }
 
@@ -259,12 +259,12 @@ class AuthController extends Controller
 
         if (!$user) {
             return response([
-                'message' => 'User not found'
+                'message' => 'Pengguna tidak ditemukan'
             ], 404);
         }
 
         if (!$currentUser->isAdmin() && auth()->id() !== $user->id) {
-            return response()->json(['message' => 'Unauthorized'], 403);
+            return response()->json(['message' => 'Tidak memiliki akses'], 403);
         }
 
         return response()->json($user);
@@ -282,12 +282,12 @@ class AuthController extends Controller
 
         if (!$user) {
             return response([
-                'message' => 'User not found'
+                'message' => 'Pengguna tidak ditemukan'
             ], 404);
         }
 
         if (!$currentUser->isAdmin() && auth()->id() !== $user->id) {
-            return response()->json(['message' => 'Unauthorized'], 403);
+            return response()->json(['message' => 'Tidak memiliki akses'], 403);
         }
 
         if ($user->isRelawan()) {
@@ -364,12 +364,12 @@ class AuthController extends Controller
 
         if (!$user) {
             return response([
-                'message' => 'User not found'
+                'message' => 'Pengguna tidak ditemukan'
             ], 404);
         }
 
         if (!$currentUser->isAdmin()) {
-            return response()->json(['message' => 'Unauthorized'], 403);
+            return response()->json(['message' => 'Tidak memiliki akses'], 403);
         }
 
         $user->delete();
@@ -396,7 +396,7 @@ class AuthController extends Controller
         $currentUser = auth()->user();
 
         if (!$currentUser->isAdmin()) {
-            return response()->json(['message' => 'Unauthorized'], 403);
+            return response()->json(['message' => 'Tidak memiliki akses'], 403);
         }
 
         $relawan = User::where('role', User::ROLE_RELAWAN)->latest()->get();
@@ -413,7 +413,7 @@ class AuthController extends Controller
         $currentUser = auth()->user();
 
         if (!$currentUser->isAdmin()) {
-            return response()->json(['message' => 'Unauthorized'], 403);
+            return response()->json(['message' => 'Tidak memiliki akses'], 403);
         }
 
         $users = User::where('role', User::ROLE_USER)->latest()->get();
@@ -433,7 +433,7 @@ class AuthController extends Controller
         $user = User::where('email', $request->email)->first();
 
         if (!$user) {
-            return response()->json(['message' => 'User not found'], 404);
+            return response()->json(['message' => 'Pengguna tidak ditemukan'], 404);
         }
 
         if ($user->hasVerifiedEmail()) {
@@ -485,7 +485,7 @@ class AuthController extends Controller
         $user = User::where('email', $request->email)->first();
 
         if (!$user) {
-            return response()->json(['message' => 'User not found'], 404);
+            return response()->json(['message' => 'Pengguna tidak ditemukan'], 404);
         }
 
         if ($user->hasVerifiedEmail()) {
@@ -518,7 +518,7 @@ class AuthController extends Controller
 
         if ($result['success']) {
             return response()->json([
-                'message' => 'Password reset OTP has been sent to your email',
+                'message' => 'OTP reset password telah dikirim ke email Anda',
                 'expires_in_minutes' => 10
             ], 200);
         }
@@ -609,7 +609,7 @@ class AuthController extends Controller
 
         if ($result['success']) {
             return response()->json([
-                'message' => 'New password reset OTP has been sent to your email',
+                'message' => 'OTP reset password baru telah dikirim ke email Anda',
                 'expires_in_minutes' => 10
             ], 200);
         }

@@ -19,7 +19,7 @@ class RelawanMiddleware
     {
         if (!auth()->check() || auth()->user()->role !== 'relawan') {
             return response()->json([
-                'message' => 'Unauthorized. Relawan access required.'
+                'message' => 'Tidak memiliki akses. Hanya relawan yang diizinkan.'
             ], 403);
         }
 

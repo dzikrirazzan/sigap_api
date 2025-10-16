@@ -19,7 +19,7 @@ class AdminMiddleware
     {
         if (!auth()->check() || auth()->user()->role !== 'admin') {
             return response()->json([
-                'message' => 'Unauthorized. Admin access required.'
+                'message' => 'Tidak memiliki akses. Hanya admin yang diizinkan.'
             ], 403);
         }
 
