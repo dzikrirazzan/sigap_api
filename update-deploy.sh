@@ -124,7 +124,16 @@ php artisan down --retry=60 2>/dev/null || php artisan down || true
 # 4. Pull latest code from GitHub
 print_status "Pulling latest code from GitHub..."
 git fetch origin 2>/dev/null || true
+
+# Stash any local changes to prevent conflicts
+print_status "Stashing local changes (if any)..."
+git stash 2>/dev/null || true
+
+# Pull latest code
 git pull origin main
+
+# Apply stashed changes back (optional - usually not needed in production)
+# git stash pop 2>/dev/null || true
 
 # 5. Install/update Composer dependencies
 print_status "Installing/updating Composer dependencies..."
