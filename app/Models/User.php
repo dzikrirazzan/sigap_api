@@ -129,4 +129,23 @@ class User extends Authenticatable
     {
         return $this->hasMany(\App\Models\RelawanShiftPattern::class, 'relawan_id');
     }
+
+    /**
+     * Check if user has verified email
+     */
+    public function hasVerifiedEmail()
+    {
+        return !is_null($this->email_verified_at);
+    }
+
+    /**
+     * Mark email as verified
+     */
+    public function markEmailAsVerified()
+    {
+        $this->email_verified_at = now();
+        $this->save();
+        
+        return $this;
+    }
 }
