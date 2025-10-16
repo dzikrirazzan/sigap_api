@@ -59,7 +59,7 @@ class RelawanShiftController extends Controller
             'success' => true,
             'actual_shifts' => $actualShifts,
             'weekly_patterns' => $weeklyPatterns,
-            'note' => 'Weekly patterns loop automatically. Modify patterns to change future shifts.'
+            'note' => 'Pola mingguan berulang secara otomatis. Ubah pola untuk mengubah shift di masa depan.'
         ]);
     }
 

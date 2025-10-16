@@ -267,7 +267,7 @@ class PanicController extends Controller
             'success' => true,
             'panic' => $panic,
             'message' => $message,
-            'action' => "Status updated to {$newStatus}",
+            'action' => "Status diperbarui menjadi {$newStatus}",
             'updated_by' => $user->role
         ]);
     }

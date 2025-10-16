@@ -28,12 +28,12 @@ class ShiftAutomationController extends Controller
                 'frequency' => 'Daily',
                 'time' => '02:00 WIB',
                 'advance_days' => 7,
-                'description' => 'Automatically generates shifts 7 days in advance every day at 2 AM'
+                'description' => 'Secara otomatis membuat shift 7 hari ke depan setiap hari pukul 2 pagi'
             ],
             'manual_generation' => [
                 'available' => true,
                 'endpoint' => '/admin/shifts/generate-from-patterns',
-                'description' => 'Manual generation is always available regardless of automation setting'
+                'description' => 'Pembuatan manual selalu tersedia terlepas dari pengaturan otomasi'
             ]
         ]);
     }
