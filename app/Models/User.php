@@ -145,7 +145,7 @@ class User extends Authenticatable
     {
         $this->email_verified_at = now();
         $this->save();
-        
+
         return $this;
     }
 }

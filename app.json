@@ -1,0 +1,115 @@
+{
+  "name": "SIGAP UNDIP - Emergency Response API",
+  "description": "Emergency Response Management System API for UNDIP",
+  "keywords": ["laravel", "emergency", "api", "undip", "sigap"],
+  "repository": "https://github.com/your-username/Emergency_API",
+  "logo": "https://raw.githubusercontent.com/your-username/Emergency_API/main/public/logo.png",
+  "success_url": "/",
+  "env": {
+    "APP_NAME": {
+      "description": "Application name",
+      "value": "SIGAP Emergency API"
+    },
+    "APP_ENV": {
+      "description": "Application environment",
+      "value": "production"
+    },
+    "APP_KEY": {
+      "description": "Laravel application key (will be auto-generated)",
+      "generator": "secret"
+    },
+    "APP_DEBUG": {
+      "description": "Enable debug mode (false for production)",
+      "value": "false"
+    },
+    "APP_URL": {
+      "description": "Application URL (will be set automatically by Heroku)",
+      "required": false
+    },
+    "LOG_CHANNEL": {
+      "description": "Log channel for Heroku",
+      "value": "errorlog"
+    },
+    "DB_CONNECTION": {
+      "description": "Database driver",
+      "value": "pgsql"
+    },
+    "QUEUE_CONNECTION": {
+      "description": "Queue connection driver",
+      "value": "database"
+    },
+    "SESSION_DRIVER": {
+      "description": "Session driver",
+      "value": "database"
+    },
+    "CACHE_DRIVER": {
+      "description": "Cache driver",
+      "value": "database"
+    },
+    "MAIL_MAILER": {
+      "description": "Mail service provider",
+      "value": "smtp"
+    },
+    "MAIL_HOST": {
+      "description": "SMTP mail host",
+      "value": "smtp.gmail.com"
+    },
+    "MAIL_PORT": {
+      "description": "SMTP mail port",
+      "value": "587"
+    },
+    "MAIL_USERNAME": {
+      "description": "SMTP username (your Gmail address)",
+      "required": true
+    },
+    "MAIL_PASSWORD": {
+      "description": "SMTP password (Gmail app password, not regular password)",
+      "required": true
+    },
+    "MAIL_ENCRYPTION": {
+      "description": "Mail encryption type",
+      "value": "tls"
+    },
+    "MAIL_FROM_ADDRESS": {
+      "description": "Mail from address",
+      "value": "noreply@sigap-emergency.com"
+    },
+    "MAIL_FROM_NAME": {
+      "description": "Mail from name",
+      "value": "SIGAP Emergency API"
+    },
+    "FONNTE_TOKEN": {
+      "description": "Fonnte API token for WhatsApp notifications",
+      "required": true
+    },
+    "FONNTE_BASE_URL": {
+      "description": "Fonnte API base URL",
+      "value": "https://api.fonnte.com"
+    }
+  },
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "basic"
+    },
+    "worker": {
+      "quantity": 1,
+      "size": "basic"
+    }
+  },
+  "addons": [
+    {
+      "plan": "heroku-postgresql:essential-0",
+      "as": "DATABASE"
+    }
+  ],
+  "buildpacks": [
+    {
+      "url": "heroku/php"
+    }
+  ],
+  "scripts": {
+    "postdeploy": "php artisan storage:link"
+  },
+  "stack": "heroku-22"
+}
