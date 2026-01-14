@@ -6,7 +6,8 @@
 
 - **Framework:** Laravel 10
 - **PHP:** ^8.1
-- **Database:** PostgreSQL (di Heroku)
+- **Database Local:** MySQL (development)
+- **Database Production:** PostgreSQL (Heroku)
 - **Queue:** Database driver
 - **Cache/Session:** Database driver
 - **Email:** SMTP (Gmail)
@@ -85,8 +86,9 @@ Sudah diupdate dengan script untuk Heroku deployment.
 
 ### **4. Database Configuration** ✅
 
-- Default database diubah ke PostgreSQL
-- Support untuk Heroku DATABASE_URL
+- **Local Development:** MySQL (default)
+- **Production (Heroku):** PostgreSQL (via DATABASE_URL)
+- Config otomatis beralih sesuai environment
 
 ### **5. TrustProxies Middleware** ✅
 
@@ -98,7 +100,84 @@ Force HTTPS di production dan support PostgreSQL timezone.
 
 ---
 
-## 🌐 Step 2: Push Kode ke GitHub
+## 💻 Step 2: Setup Local Development (PENTING!)
+
+**Sebelum deploy ke Heroku, pastikan aplikasi jalan di local dulu.**
+
+### **2.1 Setup .env File**
+
+```bash
+# Copy .env.example ke .env
+cp .env.example .env
+
+# Generate APP_KEY
+php artisan key:generate
+```
+
+### **2.2 Setup Database MySQL**
+
+```bash
+# Di macOS (jika belum install MySQL):
+brew install mysql
+brew services start mysql
+
+# Create database
+mysql -u root -p
+CREATE DATABASE emergency_api;
+EXIT;
+```
+
+### **2.3 Update .env untuk Local**
+
+Edit file `.env`:
+```env
+# Database Local (MySQL)
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=emergency_api
+DB_USERNAME=root
+DB_PASSWORD=your-mysql-password
+
+# Mail (gunakan credentials asli untuk testing)
+MAIL_USERNAME=your-email@gmail.com
+MAIL_PASSWORD=your-gmail-app-password
+
+# Fonnte (gunakan token asli untuk testing)
+FONNTE_TOKEN=your-fonnte-token
+```
+
+### **2.4 Install Dependencies & Migrate**
+
+```bash
+# Install PHP dependencies
+composer install
+
+# Run migrations
+php artisan migrate
+
+# Run seeders (jika ada)
+php artisan db:seed
+
+# Create storage link
+php artisan storage:link
+```
+
+### **2.5 Test Local Server**
+
+```bash
+# Start development server
+php artisan serve
+
+# Test di browser: http://localhost:8000/api/health
+# Expected: {"status":"ok","service":"SIGAP Emergency API",...}
+```
+
+**✅ Pastikan aplikasi berjalan di local sebelum lanjut deploy ke Heroku!**
+
+---
+
+## 🌐 Step 3: Push Kode ke GitHub
 
 ### **2.1 Initialize Git (jika belum)**
 
@@ -122,13 +201,13 @@ git commit -m "Prepare for Heroku deployment
 - Add Procfile for web, worker, and release dynos
 - Add app.json for Heroku configuration
 - Update composer.json with post-install scripts
-- Configure PostgreSQL as default database
+- Configure database: MySQL for local, PostgreSQL for Heroku
 - Update TrustProxies for Heroku load balancer
 - Force HTTPS in production
 - Add PostgreSQL timezone support"
 ```
 
-### **2.3 Create GitHub Repository**
+### **3.3 Create GitHub Repository**
 
 ```bash
 # Create repo di GitHub UI atau via gh CLI
@@ -140,16 +219,16 @@ git push -u origin main
 
 ---
 
-## 🚀 Step 3: Setup Heroku App
+## 🚀 Step 4: Setup Heroku App
 
-### **3.1 Login ke Heroku**
+### **4.1 Login ke Heroku**
 
 ```bash
 heroku login
 # Browser akan terbuka untuk login
 ```
 
-### **3.2 Create Heroku App**
+### **4.2 Create Heroku App**
 
 ```bash
 # Ganti 'sigap-undip-api' dengan nama unik Anda
@@ -163,7 +242,7 @@ heroku create
 # https://sigap-undip-api.herokuapp.com/ | https://git.heroku.com/sigap-undip-api.git
 ```
 
-### **3.3 Add PostgreSQL Database**
+### **4.3 Add PostgreSQL Database**
 
 ```bash
 # Essential-0 plan (gratis, limit 10K rows)
@@ -176,9 +255,9 @@ heroku config:get DATABASE_URL
 
 ---
 
-## ⚙️ Step 4: Konfigurasi Environment Variables
+## ⚙️ Step 5: Konfigurasi Environment Variables
 
-### **4.1 Generate APP_KEY**
+### **5.1 Generate APP_KEY**
 
 ```bash
 # Di komputer lokal
@@ -189,7 +268,7 @@ php artisan key:generate --show
 heroku config:set APP_KEY="base64:abcd1234...xyz"
 ```
 
-### **4.2 Set Basic Config**
+### **5.2 Set Basic Config**
 
 ```bash
 heroku config:set APP_NAME="SIGAP Emergency API"
@@ -199,7 +278,7 @@ heroku config:set LOG_CHANNEL=errorlog
 heroku config:set DB_CONNECTION=pgsql
 ```
 
-### **4.3 Set Mail Configuration (Gmail)**
+### **5.3 Set Mail Configuration (Gmail)**
 
 ```bash
 # Ganti dengan email dan app password Anda
@@ -213,7 +292,7 @@ heroku config:set MAIL_FROM_ADDRESS=noreply@sigap.com
 heroku config:set MAIL_FROM_NAME="SIGAP Emergency API"
 ```
 
-### **4.4 Set WhatsApp (Fonnte) Config**
+### **5.4 Set WhatsApp (Fonnte) Config**
 
 ```bash
 # Ganti dengan token Fonnte Anda
@@ -221,7 +300,7 @@ heroku config:set FONNTE_TOKEN=your-fonnte-token-here
 heroku config:set FONNTE_BASE_URL=https://api.fonnte.com
 ```
 
-### **4.5 Set Queue & Cache Config**
+### **5.5 Set Queue & Cache Config**
 
 ```bash
 heroku config:set QUEUE_CONNECTION=database
@@ -229,7 +308,7 @@ heroku config:set SESSION_DRIVER=database
 heroku config:set CACHE_DRIVER=database
 ```
 
-### **4.6 Verify Semua Config**
+### **5.6 Verify Semua Config**
 
 ```bash
 heroku config
@@ -237,7 +316,7 @@ heroku config
 
 ---
 
-## 🔗 Step 5: Connect GitHub ke Heroku
+## 🔗 Step 6: Connect GitHub ke Heroku
 
 ### **Method A: Via Heroku Dashboard (Recommended)**
 
@@ -278,9 +357,9 @@ git push heroku main
 
 ---
 
-## 🗄️ Step 6: Database Setup
+## 🗄️ Step 7: Database Setup
 
-### **6.1 Run Migrations**
+### **7.1 Run Migrations**
 
 ```bash
 # Run migrations di Heroku
@@ -290,13 +369,13 @@ heroku run php artisan migrate --force
 heroku run php artisan migrate:status
 ```
 
-### **6.2 Create Storage Link**
+### **7.2 Create Storage Link**
 
 ```bash
 heroku run php artisan storage:link
 ```
 
-### **6.3 Seed Database (Optional)**
+### **7.3 Seed Database (Optional)**
 
 ```bash
 # Jika ada seeders
@@ -305,9 +384,9 @@ heroku run php artisan db:seed --force
 
 ---
 
-## 👷 Step 7: Setup Worker Dyno
+## 👷 Step 8: Setup Worker Dyno
 
-### **7.1 Scale Worker untuk Queue Processing**
+### **8.1 Scale Worker untuk Queue Processing**
 
 ```bash
 # Enable worker dyno (1 instance)
@@ -317,7 +396,7 @@ heroku ps:scale worker=1
 heroku ps
 ```
 
-### **7.2 Verify Worker Running**
+### **8.2 Verify Worker Running**
 
 ```bash
 # Check worker logs
@@ -326,15 +405,15 @@ heroku logs --tail --dyno worker
 
 ---
 
-## 📅 Step 8: Setup Scheduler untuk Auto-Generate Shifts
+## 📅 Step 9: Setup Scheduler untuk Auto-Generate Shifts
 
-### **8.1 Install Heroku Scheduler Add-on**
+### **9.1 Install Heroku Scheduler Add-on**
 
 ```bash
 heroku addons:create scheduler:standard
 ```
 
-### **8.2 Configure Scheduler**
+### **9.2 Configure Scheduler**
 
 ```bash
 # Open scheduler dashboard
@@ -349,7 +428,7 @@ Di dashboard Scheduler:
 4. **Next Due:** 02:00 (atau jam lain yang Anda inginkan)
 5. Click **Save job**
 
-### **8.3 Test Scheduler Command**
+### **9.3 Test Scheduler Command**
 
 ```bash
 # Test manual
@@ -358,15 +437,15 @@ heroku run php artisan shifts:auto-generate --days=7
 
 ---
 
-## 🧪 Step 9: Testing Deployment
+## 🧪 Step 10: Testing Deployment
 
-### **9.1 Open App**
+### **10.1 Open App**
 
 ```bash
 heroku open
 ```
 
-### **9.2 Test Health Check Endpoint**
+### **10.2 Test Health Check Endpoint**
 
 ```bash
 # Get app URL
@@ -384,7 +463,7 @@ curl https://sigap-undip-api.herokuapp.com/api/health
 # }
 ```
 
-### **9.3 Check Logs**
+### **10.3 Check Logs**
 
 ```bash
 # Real-time logs (semua dynos)
@@ -398,7 +477,7 @@ heroku logs --tail --dyno worker
 heroku logs -n 500
 ```
 
-### **9.4 Test API Endpoints**
+### **10.4 Test API Endpoints**
 
 ```bash
 # Health check
@@ -416,7 +495,7 @@ curl -X POST https://sigap-undip-api.herokuapp.com/api/register \
   }'
 ```
 
-### **9.5 Verify Database Connection**
+### **10.5 Verify Database Connection**
 
 ```bash
 # Connect to PostgreSQL
@@ -434,9 +513,9 @@ SELECT * FROM users LIMIT 5;
 
 ---
 
-## 🔄 Step 10: Update & Redeploy
+## 🔄 Step 11: Update & Redeploy
 
-### **10.1 Automatic Deploy**
+### **11.1 Automatic Deploy**
 
 Jika sudah enable automatic deploys:
 
@@ -450,7 +529,7 @@ git push origin main
 # Monitor di: https://dashboard.heroku.com/apps/sigap-undip-api/activity
 ```
 
-### **10.2 Manual Deploy**
+### **11.2 Manual Deploy**
 
 ```bash
 # Via GitHub
@@ -460,7 +539,7 @@ git push origin main
 git push heroku main
 ```
 
-### **10.3 Rollback (jika ada error)**
+### **11.3 Rollback (jika ada error)**
 
 ```bash
 # Lihat release history
@@ -472,9 +551,9 @@ heroku rollback v10
 
 ---
 
-## 📊 Step 11: Monitoring & Maintenance
+## 📊 Step 12: Monitoring & Maintenance
 
-### **11.1 View Metrics**
+### **12.1 View Metrics**
 
 ```bash
 # Dashboard metrics
@@ -490,7 +569,7 @@ heroku pg:info
 heroku pg:info --app sigap-undip-api
 ```
 
-### **11.2 Check Dyno Hours**
+### **12.2 Check Dyno Hours**
 
 ```bash
 # Free tier: 1000 hours/month
@@ -498,7 +577,7 @@ heroku pg:info --app sigap-undip-api
 # https://dashboard.heroku.com/account/billing
 ```
 
-### **11.3 Database Backup**
+### **12.3 Database Backup**
 
 ```bash
 # Create manual backup
@@ -511,7 +590,7 @@ heroku pg:backups
 heroku pg:backups:download
 ```
 
-### **11.4 Clear Cache**
+### **12.4 Clear Cache**
 
 ```bash
 heroku run php artisan cache:clear
@@ -522,7 +601,7 @@ heroku run php artisan view:clear
 
 ---
 
-## 🔒 Step 12: Security Checklist
+## 🔒 Step 13: Security Checklist
 
 - [x] `APP_DEBUG=false` di production
 - [x] HTTPS forced via AppServiceProvider
