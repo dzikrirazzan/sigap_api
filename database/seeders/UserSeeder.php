@@ -55,5 +55,107 @@ class UserSeeder extends Seeder
                 'role' => 'user',
             ]
         );
+
+        // Relawan tambahan
+        User::firstOrCreate(
+            ['email' => 'relawan1@gmail.com'],
+            [
+                'name' => 'Budi Santoso',
+                'password' => Hash::make('kikipoiu'),
+                'role' => 'relawan',
+                'nik' => '3374010101990001',
+                'no_telp' => '081234567891',
+            ]
+        );
+
+        User::firstOrCreate(
+            ['email' => 'relawan2@gmail.com'],
+            [
+                'name' => 'Siti Nurhaliza',
+                'password' => Hash::make('kikipoiu'),
+                'role' => 'relawan',
+                'nik' => '3374010202990002',
+                'no_telp' => '081234567892',
+            ]
+        );
+
+        User::firstOrCreate(
+            ['email' => 'relawan3@gmail.com'],
+            [
+                'name' => 'Ahmad Hidayat',
+                'password' => Hash::make('kikipoiu'),
+                'role' => 'relawan',
+                'nik' => '3374010303990003',
+                'no_telp' => '081234567893',
+            ]
+        );
+
+        User::firstOrCreate(
+            ['email' => 'relawan4@gmail.com'],
+            [
+                'name' => 'Dewi Lestari',
+                'password' => Hash::make('kikipoiu'),
+                'role' => 'relawan',
+                'nik' => '3374010404990004',
+                'no_telp' => '081234567894',
+            ]
+        );
+
+        User::firstOrCreate(
+            ['email' => 'relawan5@gmail.com'],
+            [
+                'name' => 'Rudi Hartono',
+                'password' => Hash::make('kikipoiu'),
+                'role' => 'relawan',
+                'nik' => '3374010505990005',
+                'no_telp' => '081234567895',
+            ]
+        );
+
+        // User biasa tambahan
+        User::firstOrCreate(
+            ['email' => 'user1@gmail.com'],
+            [
+                'name' => 'Andi Wijaya',
+                'password' => Hash::make('kikipoiu'),
+                'role' => 'user',
+            ]
+        );
+
+        User::firstOrCreate(
+            ['email' => 'user2@gmail.com'],
+            [
+                'name' => 'Nina Marlina',
+                'password' => Hash::make('kikipoiu'),
+                'role' => 'user',
+            ]
+        );
+
+        User::firstOrCreate(
+            ['email' => 'user3@gmail.com'],
+            [
+                'name' => 'Joko Susilo',
+                'password' => Hash::make('kikipoiu'),
+                'role' => 'user',
+            ]
+        );
+
+        User::firstOrCreate(
+            ['email' => 'user4@gmail.com'],
+            [
+                'name' => 'Sri Wahyuni',
+                'password' => Hash::make('kikipoiu'),
+                'role' => 'user',
+            ]
+        );
+
+        User::firstOrCreate(
+            ['email' => 'user5@gmail.com'],
+            [
+                'name' => 'Eko Prasetyo',
+                'password' => Hash::make('kikipoiu'),
+                'role' => 'user',
+            ]
+        );
     }
 }
