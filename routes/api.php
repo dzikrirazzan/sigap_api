@@ -36,7 +36,7 @@ Route::post('/password/reset', [AuthController::class, 'resetPassword']);
 Route::post('/password/resend-otp', [AuthController::class, 'resendPasswordResetOtp']);
 
 // Route terproteksi (untuk semua user terautentikasi)
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware('sanctum.token')->group(function () {
     // Profil user yang login
     Route::get('/profile', [AuthController::class, 'profile']);
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -61,7 +61,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/panic/today', [PanicController::class, 'today']);
 
     // ====== SHARED ROUTES (RELAWAN & ADMIN) ======
-    Route::middleware(['auth:sanctum'])->group(function () {
+    // Note: sanctum.token already applied from parent group
+    Route::group([], function () {
         // Update panic status - accessible by both relawan and admin
         Route::put('/panic/{panicId}/status', [PanicController::class, 'updateStatus']);
     });

@@ -67,5 +67,8 @@ class Kernel extends HttpKernel
         'admin' => \App\Http\Middleware\AdminMiddleware::class,
         'relawan' => \App\Http\Middleware\RelawanMiddleware::class,
         'user' => \App\Http\Middleware\UserMiddleware::class,
+        
+        // Custom Sanctum token auth - bypasses guard resolution issues
+        'sanctum.token' => \App\Http\Middleware\SanctumTokenAuth::class,
     ];
 }
