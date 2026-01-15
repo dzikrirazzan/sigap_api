@@ -130,6 +130,7 @@ EXIT;
 ### **2.3 Update .env untuk Local**
 
 Edit file `.env`:
+
 ```env
 # Database Local (MySQL)
 DB_CONNECTION=mysql
