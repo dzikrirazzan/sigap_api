@@ -40,13 +40,8 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
-        
-        // Sanctum guard - uses session driver but token auth is handled by
-        // EnsureFrontendRequestsAreStateful middleware which runs before this
-        'sanctum' => [
-            'driver' => 'session',
-            'provider' => 'users',
-        ],
+        // NOTE: Do NOT define sanctum guard here - SanctumServiceProvider 
+        // registers it dynamically via Auth::extend() in boot()
     ],
 
     /*
