@@ -41,10 +41,10 @@ return [
             'provider' => 'users',
         ],
         
-        // Sanctum guard using Sanctum's 'sanctum' driver for Bearer token validation
-        // The 'sanctum' driver is registered by SanctumServiceProvider::configureGuard()
+        // Sanctum guard - uses session driver but token auth is handled by
+        // EnsureFrontendRequestsAreStateful middleware which runs before this
         'sanctum' => [
-            'driver' => 'sanctum',
+            'driver' => 'session',
             'provider' => 'users',
         ],
     ],
