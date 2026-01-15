@@ -9,7 +9,8 @@ return [
         Sanctum::currentApplicationUrlWithPort()
     ))),
 
-    'guard' => ['web'],
+    // null guard enables pure token-based API authentication
+    'guard' => null,
     
     // Set expiration ke 60 menit (1 jam)
     'expiration' => 60,
