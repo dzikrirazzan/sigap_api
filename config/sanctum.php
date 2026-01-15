@@ -9,7 +9,7 @@ return [
         Sanctum::currentApplicationUrlWithPort()
     ))),
 
-    'guard' => ['web'],
+    'guard' => ['sanctum'],
     
     // Set expiration ke 60 menit (1 jam)
     'expiration' => 60,

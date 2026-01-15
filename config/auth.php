@@ -40,8 +40,12 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
-        // Note: Laravel Sanctum automatically registers the 'sanctum' guard
-        // Do not define it manually here as it causes driver conflicts
+        
+        // Sanctum guard for API authentication
+        'sanctum' => [
+            'driver' => 'session',
+            'provider' => 'users',
+        ],
     ],
 
     /*
