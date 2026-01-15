@@ -51,19 +51,40 @@ class EmailOtp extends Model
      */
     public static function verifyEmailOtp($email, $otp)
     {
+        // Log untuk debugging
+        \Log::info('Verifying OTP', [
+            'email' => $email,
+            'otp' => $otp,
+            'current_time' => Carbon::now()->toDateTimeString()
+        ]);
+
         $otpRecord = self::where('email', $email)
             ->where('otp', $otp)
             ->where('type', 'email_verification')
             ->where('used', false)
-            ->where('expires_at', '>', Carbon::now())
             ->first();
 
-        if ($otpRecord) {
-            $otpRecord->update(['used' => true]);
-            return true;
+        if (!$otpRecord) {
+            \Log::warning('OTP record not found', [
+                'email' => $email,
+                'otp' => $otp
+            ]);
+            return false;
         }
 
-        return false;
+        // Cek expiry dengan timezone aware comparison
+        if (Carbon::now()->greaterThan($otpRecord->expires_at)) {
+            \Log::warning('OTP expired', [
+                'email' => $email,
+                'expires_at' => $otpRecord->expires_at->toDateTimeString(),
+                'current_time' => Carbon::now()->toDateTimeString()
+            ]);
+            return false;
+        }
+
+        $otpRecord->update(['used' => true]);
+        \Log::info('OTP verified successfully', ['email' => $email]);
+        return true;
     }
 
     /**
