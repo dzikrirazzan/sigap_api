@@ -40,11 +40,8 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
-
-        'sanctum' => [
-            'driver' => 'sanctum',
-            'provider' => 'users',
-        ],
+        // Note: Laravel Sanctum automatically registers the 'sanctum' guard
+        // Do not define it manually here as it causes driver conflicts
     ],
 
     /*
