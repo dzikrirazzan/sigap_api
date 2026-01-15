@@ -41,9 +41,10 @@ return [
             'provider' => 'users',
         ],
         
-        // Required for auth:sanctum middleware - Sanctum v3.x requires explicit guard
+        // Sanctum guard using Sanctum's 'sanctum' driver for Bearer token validation
+        // The 'sanctum' driver is registered by SanctumServiceProvider::configureGuard()
         'sanctum' => [
-            'driver' => 'session',
+            'driver' => 'sanctum',
             'provider' => 'users',
         ],
     ],
