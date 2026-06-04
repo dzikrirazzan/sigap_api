@@ -16,6 +16,8 @@ class Report extends BaseModel
         'description',
         'status',
         'admin_notes',
+        'handled_by',
+        'handled_at',
     ];
 
     /**
@@ -30,7 +32,7 @@ class Report extends BaseModel
      *
      * @var array
      */
-    protected $with = ['user'];
+    protected $with = ['user', 'handler'];
 
     /**
      * Dapatkan URL untuk foto laporan.
@@ -50,5 +52,13 @@ class Report extends BaseModel
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Relawan/Admin yang menangani laporan.
+     */
+    public function handler()
+    {
+        return $this->belongsTo(User::class, 'handled_by');
     }
 }

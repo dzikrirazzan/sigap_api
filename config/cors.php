@@ -1,5 +1,17 @@
 <?php
 
+$frontendUrl = env('FRONTEND_URL', 'http://localhost:3000');
+$defaultOrigins = implode(',', array_filter([
+    $frontendUrl,
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+]));
+
+$allowedOrigins = array_values(array_unique(array_filter(array_map(
+    'trim',
+    explode(',', env('CORS_ALLOWED_ORIGINS', $defaultOrigins))
+))));
+
 return [
 
     /*
@@ -19,7 +31,7 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['*'],
+    'allowed_origins' => $allowedOrigins,
 
     'allowed_origins_patterns' => [],
 
@@ -29,6 +41,6 @@ return [
 
     'max_age' => 0,
 
-    'supports_credentials' => false,
+    'supports_credentials' => env('CORS_SUPPORTS_CREDENTIALS', false),
 
 ];

@@ -59,6 +59,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // ====== PANIC BUTTON ======
     Route::post('/panic', [PanicController::class, 'store']);
     Route::get('/panic/today', [PanicController::class, 'today']);
+    Route::get('/panic/{panicId}', [PanicController::class, 'show']);
 
     // ====== SHARED ROUTES (RELAWAN & ADMIN) ======
     Route::middleware(['auth:sanctum'])->group(function () {

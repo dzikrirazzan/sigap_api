@@ -31,11 +31,11 @@ class ReportController extends Controller
             // Jika ada data, kita ambil dengan cara biasa
             if ($currentUser->isAdmin() || $currentUser->isRelawan()) {
                 // Admin dan relawan dapat melihat semua laporan
-                $reports = Report::with('user')->latest()->get();
+                $reports = Report::with(['user', 'handler'])->latest()->get();
             } else {
                 // Pengguna biasa hanya bisa melihat laporan mereka sendiri
                 $reports = Report::where('user_id', auth()->id())
-                    ->with('user')
+                    ->with(['user', 'handler'])
                     ->latest()
                     ->get();
             }
@@ -58,6 +58,14 @@ class ReportController extends Controller
                     'description' => $report->description,
                     'status' => $report->status,
                     'admin_notes' => $report->admin_notes,
+                    'handled_by' => $report->handled_by,
+                    'handled_at' => $report->handled_at ? (\Carbon\Carbon::parse($report->handled_at)->format('Y-m-d H:i:s')) : null,
+                    'handler' => $report->handler ? [
+                        'id' => $report->handler->id,
+                        'name' => $report->handler->name,
+                        'email' => $report->handler->email,
+                        'role' => $report->handler->role,
+                    ] : null,
                     'created_at' => $report->created_at->format('Y-m-d H:i:s'),
                     'updated_at' => $report->updated_at->format('Y-m-d H:i:s'),
                 ];
@@ -109,8 +117,8 @@ class ReportController extends Controller
                 'status' => 'pending', // Default status
             ]);
 
-            // Load the user relation
-            $report->load('user');
+            // Load the relations
+            $report->load(['user', 'handler']);
 
             // Kembalikan format lama untuk kompatibilitas
             return response()->json([
@@ -131,6 +139,14 @@ class ReportController extends Controller
                     'description' => $report->description,
                     'status' => $report->status,
                     'admin_notes' => $report->admin_notes,
+                    'handled_by' => $report->handled_by,
+                    'handled_at' => $report->handled_at ? (\Carbon\Carbon::parse($report->handled_at)->format('Y-m-d H:i:s')) : null,
+                    'handler' => $report->handler ? [
+                        'id' => $report->handler->id,
+                        'name' => $report->handler->name,
+                        'email' => $report->handler->email,
+                        'role' => $report->handler->role,
+                    ] : null,
                     'created_at' => $report->created_at->format('Y-m-d H:i:s'),
                     'updated_at' => $report->updated_at->format('Y-m-d H:i:s'),
                 ]
@@ -202,7 +218,7 @@ class ReportController extends Controller
             /** @var \App\Models\User $currentUser */
             $currentUser = auth()->user();
 
-            $report = Report::with('user')->findOrFail($reportId);
+            $report = Report::with(['user', 'handler'])->findOrFail($reportId);
 
             // Periksa otorisasi
             if (!$currentUser->isAdmin() && !$currentUser->isRelawan() && auth()->id() !== $report->user_id) {
@@ -230,6 +246,14 @@ class ReportController extends Controller
                     'description' => $report->description,
                     'status' => $report->status,
                     'admin_notes' => $report->admin_notes,
+                    'handled_by' => $report->handled_by,
+                    'handled_at' => $report->handled_at ? (\Carbon\Carbon::parse($report->handled_at)->format('Y-m-d H:i:s')) : null,
+                    'handler' => $report->handler ? [
+                        'id' => $report->handler->id,
+                        'name' => $report->handler->name,
+                        'email' => $report->handler->email,
+                        'role' => $report->handler->role,
+                    ] : null,
                     'created_at' => $report->created_at->format('Y-m-d H:i:s'),
                     'updated_at' => $report->updated_at->format('Y-m-d H:i:s'),
                 ]
@@ -275,7 +299,13 @@ class ReportController extends Controller
                     ], 422);
                 }
 
-                $report->update($validator->validated());
+                $validatedData = $validator->validated();
+                if (isset($validatedData['status'])) {
+                    $validatedData['handled_by'] = auth()->id();
+                    $validatedData['handled_at'] = now();
+                }
+
+                $report->update($validatedData);
             } elseif (auth()->id() === $report->user_id && $report->status === 'pending') {
                 // Pengguna hanya dapat memperbarui laporan mereka sendiri yang masih pending
                 $validator = Validator::make($request->all(), [
@@ -308,8 +338,8 @@ class ReportController extends Controller
                 ], 403);
             }
 
-            // Load the user relation
-            $report->load('user');
+            // Load relations
+            $report->load(['user', 'handler']);
 
             // Kembalikan format lama untuk kompatibilitas
             return response()->json([
@@ -330,6 +360,14 @@ class ReportController extends Controller
                     'description' => $report->description,
                     'status' => $report->status,
                     'admin_notes' => $report->admin_notes,
+                    'handled_by' => $report->handled_by,
+                    'handled_at' => $report->handled_at ? (\Carbon\Carbon::parse($report->handled_at)->format('Y-m-d H:i:s')) : null,
+                    'handler' => $report->handler ? [
+                        'id' => $report->handler->id,
+                        'name' => $report->handler->name,
+                        'email' => $report->handler->email,
+                        'role' => $report->handler->role,
+                    ] : null,
                     'created_at' => $report->created_at->format('Y-m-d H:i:s'),
                     'updated_at' => $report->updated_at->format('Y-m-d H:i:s'),
                 ]

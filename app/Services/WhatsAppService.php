@@ -12,8 +12,8 @@ class WhatsAppService
 
     public function __construct()
     {
-        $this->token = config('services.fonnte.token', 'tgX3Wbv4zgGaVSDU749z');
-        $this->baseUrl = 'https://api.fonnte.com';
+        $this->token = config('services.fonnte.token');
+        $this->baseUrl = config('services.fonnte.base_url', 'https://api.fonnte.com');
     }
 
     /**
@@ -192,8 +192,8 @@ class WhatsAppService
         $message .= "• Pelapor: {$reporterName}\n";
         $message .= "• Kontak: {$reporterPhone}\n\n";
 
-        if ($panicReport->deskripsi) {
-            $message .= "• Deskripsi: {$panicReport->deskripsi}\n";
+        if ($panicReport->location_description) {
+            $message .= "• Deskripsi: {$panicReport->location_description}\n";
         }
 
         if ($panicReport->latitude && $panicReport->longitude) {
