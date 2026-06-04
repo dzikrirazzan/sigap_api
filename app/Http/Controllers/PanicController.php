@@ -28,6 +28,7 @@ class PanicController extends Controller
             'latitude' => 'required|numeric',
             'longitude' => 'required|numeric',
             'description' => 'nullable|string|max:500',
+            'emergency_type' => 'nullable|string|max:100',
         ]);
 
         $userId = auth()->id();
@@ -64,7 +65,8 @@ class PanicController extends Controller
             'user_id' => $userId,
             'latitude' => $request->latitude,
             'longitude' => $request->longitude,
-            'description' => $request->description,
+            'location_description' => $request->description,
+            'emergency_type' => $request->emergency_type,
             'status' => PanicReport::STATUS_PENDING,
         ]);
 
@@ -159,6 +161,41 @@ class PanicController extends Controller
 
         // Jika bukan admin atau relawan
         return response()->json(['message' => 'Tidak memiliki akses. Hanya admin atau relawan yang diizinkan'], 403);
+    }
+
+    // Relawan & Admin update status panic report (handling/resolved/cancelled)
+    public function show($panicId)
+    {
+        $user = auth()->user();
+
+        try {
+            $panic = PanicReport::with(['user:id,name,email,no_telp,nik', 'handler:id,name'])
+                ->findOrFail($panicId);
+
+            if ($user->role === User::ROLE_ADMIN) {
+                return response()->json($panic);
+            }
+
+            if ($user->role === User::ROLE_USER && $panic->user_id === $user->id) {
+                return response()->json($panic);
+            }
+
+            if ($user->role === User::ROLE_RELAWAN) {
+                $isTodayReport = $panic->created_at->isSameDay(Carbon::now());
+
+                if ($isTodayReport && $this->isRelawanOnDutyToday($user->id)) {
+                    return response()->json($panic);
+                }
+            }
+
+            return response()->json([
+                'message' => 'Tidak memiliki akses ke laporan panik ini'
+            ], 403);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'message' => 'Laporan panik tidak ditemukan'
+            ], 404);
+        }
     }
 
     // Relawan & Admin update status panic report (handling/resolved/cancelled)

@@ -39,8 +39,8 @@ return [
             'host' => env('MAIL_HOST', 'smtp.gmail.com'),
             'port' => env('MAIL_PORT', 587),
             'encryption' => env('MAIL_ENCRYPTION', 'tls'),
-            'username' => env('MAIL_USERNAME', 'dzikrirazzan02@gmail.com'),
-            'password' => env('MAIL_PASSWORD', 'mjxefcchpyysgbzx'),
+            'username' => env('MAIL_USERNAME'),
+            'password' => env('MAIL_PASSWORD'),
             'timeout' => null,
             'local_domain' => env('MAIL_EHLO_DOMAIN'),
         ],
@@ -98,7 +98,7 @@ return [
     */
 
     'from' => [
-        'address' => env('MAIL_FROM_ADDRESS', 'dzikrirazzan02@gmail.com'),
+        'address' => env('MAIL_FROM_ADDRESS', 'noreply@sigap.undip.ac.id'),
         'name' => env('MAIL_FROM_NAME', 'Sigap Undip'),
     ],
 

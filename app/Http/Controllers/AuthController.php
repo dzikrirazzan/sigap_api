@@ -307,7 +307,16 @@ class AuthController extends Controller
                 'password' => 'sometimes|string|min:6',
                 'nim' => 'nullable|string|max:20',
                 'jurusan' => 'nullable|string|max:100',
+                'no_telp' => 'nullable|string|max:15',
             ]);
+        }
+
+        if (isset($request->role)) {
+            if (!in_array($request->role, ['user', 'relawan', 'admin'])) {
+                return response()->json([
+                    'message' => 'Role tidak valid. Harus salah satu dari: user, relawan, admin'
+                ], 422);
+            }
         }
 
         if (isset($request->role) && $currentUser->isAdmin()) {

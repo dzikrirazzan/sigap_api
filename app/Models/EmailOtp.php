@@ -118,6 +118,7 @@ class EmailOtp extends Model
             ->first();
 
         if ($otpRecord) {
+            $otpRecord->update(['used' => true]);
             return true;
         }
 
