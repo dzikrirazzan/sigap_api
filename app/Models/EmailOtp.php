@@ -108,7 +108,7 @@ class EmailOtp extends Model
     /**
      * Verify OTP for password reset
      */
-    public static function verifyPasswordResetOtp($email, $otp)
+    public static function verifyPasswordResetOtp($email, $otp, $markAsUsed = true)
     {
         $otpRecord = self::where('email', $email)
             ->where('otp', $otp)
@@ -118,7 +118,10 @@ class EmailOtp extends Model
             ->first();
 
         if ($otpRecord) {
-            $otpRecord->update(['used' => true]);
+            if ($markAsUsed) {
+                $otpRecord->update(['used' => true]);
+            }
+
             return true;
         }
 

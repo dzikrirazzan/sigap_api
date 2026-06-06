@@ -12,6 +12,17 @@ use Carbon\Carbon;
 
 class AuthController extends Controller
 {
+    private function emailRules(string $presence = 'required', array $extraRules = []): array
+    {
+        return array_merge([
+            $presence,
+            'string',
+            'email:rfc',
+            'max:254',
+            'not_regex:/[\r\n]/',
+        ], $extraRules);
+    }
+
     /**
      * Daftar semua user (hanya admin)
      */
@@ -35,7 +46,7 @@ class AuthController extends Controller
     {
         $fields = $request->validate([
             'name' => 'required|string',
-            'email' => 'required|string|email|unique:users,email',
+            'email' => $this->emailRules('required', ['unique:users,email']),
             'password' => 'required|string|min:6',
             'no_telp' => 'required|string|max:15',
             'nim' => 'nullable|string|max:25',
@@ -88,7 +99,7 @@ class AuthController extends Controller
 
         $fields = $request->validate([
             'name' => 'required|string',
-            'email' => 'required|string|unique:users,email',
+            'email' => $this->emailRules('required', ['unique:users,email']),
             'password' => 'required|string|min:6',
             'nik' => 'required|string|size:16|unique:users,nik',
             'nim' => 'nullable|string|max:20',
@@ -127,7 +138,7 @@ class AuthController extends Controller
 
         $fields = $request->validate([
             'name' => 'required|string',
-            'email' => 'required|string|unique:users,email',
+            'email' => $this->emailRules('required', ['unique:users,email']),
             'password' => 'required|string|min:6',
         ]);
 
@@ -150,7 +161,7 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $fields = $request->validate([
-            'email' => 'required|string|email',
+            'email' => $this->emailRules(),
             'password' => 'required|string'
         ]);
 
@@ -293,7 +304,7 @@ class AuthController extends Controller
         if ($user->isRelawan()) {
             $fields = $request->validate([
                 'name' => 'sometimes|string',
-                'email' => 'sometimes|string|unique:users,email,' . $id,
+                'email' => $this->emailRules('sometimes', ['unique:users,email,' . $id]),
                 'password' => 'sometimes|string|min:6',
                 'nik' => 'sometimes|string|size:16|unique:users,nik,' . $id,
                 'nim' => 'nullable|string|max:20',
@@ -303,7 +314,7 @@ class AuthController extends Controller
         } else {
             $fields = $request->validate([
                 'name' => 'sometimes|string',
-                'email' => 'sometimes|string|unique:users,email,' . $id,
+                'email' => $this->emailRules('sometimes', ['unique:users,email,' . $id]),
                 'password' => 'sometimes|string|min:6',
                 'nim' => 'nullable|string|max:20',
                 'jurusan' => 'nullable|string|max:100',
@@ -436,7 +447,7 @@ class AuthController extends Controller
     public function sendEmailVerificationOtp(Request $request)
     {
         $request->validate([
-            'email' => 'required|email'
+            'email' => $this->emailRules()
         ]);
 
         $user = User::where('email', $request->email)->first();
@@ -465,7 +476,7 @@ class AuthController extends Controller
     public function verifyEmailOtp(Request $request)
     {
         $request->validate([
-            'email' => 'required|email',
+            'email' => $this->emailRules(),
             'otp' => 'required|string|size:6'
         ]);
 
@@ -488,7 +499,7 @@ class AuthController extends Controller
     public function resendEmailVerificationOtp(Request $request)
     {
         $request->validate([
-            'email' => 'required|email'
+            'email' => $this->emailRules()
         ]);
 
         $user = User::where('email', $request->email)->first();
@@ -517,7 +528,7 @@ class AuthController extends Controller
     public function sendPasswordResetOtp(Request $request)
     {
         $request->validate([
-            'email' => 'required|email|exists:users,email',
+            'email' => $this->emailRules('required', ['exists:users,email']),
         ]);
 
         $user = User::where('email', $request->email)->first();
@@ -543,7 +554,7 @@ class AuthController extends Controller
     public function verifyPasswordResetOtp(Request $request)
     {
         $request->validate([
-            'email' => 'required|email|exists:users,email',
+            'email' => $this->emailRules('required', ['exists:users,email']),
             'otp' => 'required|string|size:6',
         ]);
 
@@ -570,7 +581,7 @@ class AuthController extends Controller
     public function resetPassword(Request $request)
     {
         $request->validate([
-            'email' => 'required|email|exists:users,email',
+            'email' => $this->emailRules('required', ['exists:users,email']),
             'otp' => 'required|string|size:6',
             'password' => 'required|string|min:6|confirmed',
         ]);
@@ -608,7 +619,7 @@ class AuthController extends Controller
     public function resendPasswordResetOtp(Request $request)
     {
         $request->validate([
-            'email' => 'required|email|exists:users,email',
+            'email' => $this->emailRules('required', ['exists:users,email']),
         ]);
 
         $user = User::where('email', $request->email)->first();

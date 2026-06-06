@@ -22,7 +22,7 @@ class StoreReportRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'photo' => 'required|mimes:jpeg,jpg,png,gif,bmp,webp,heic,heif,svg|max:20480', // max 20MB, support iPhone HEIC/HEIF
+            'photo' => 'required|mimes:jpeg,jpg,png,gif,bmp,webp,heic,heif|max:10240',
             'location' => 'required|string|max:255',
             'problem_type' => 'required|string|max:100',
             'description' => 'required|string|max:1000',

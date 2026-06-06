@@ -80,7 +80,7 @@ class ReportController extends Controller
             ]);
 
             return response()->json([
-                'error' => 'Terjadi kesalahan saat mengambil data laporan: ' . $e->getMessage()
+                'error' => 'Terjadi kesalahan saat mengambil data laporan'
             ], 500);
         }
     }
@@ -159,8 +159,7 @@ class ReportController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Terjadi kesalahan saat membuat laporan: ' . $e->getMessage(),
-                'error' => $e->getMessage()
+                'message' => 'Terjadi kesalahan saat membuat laporan'
             ], 500);
         }
     }
@@ -174,7 +173,7 @@ class ReportController extends Controller
         try {
             // Validasi file foto
             $validator = Validator::make($request->all(), [
-                'photo' => 'required|mimes:jpeg,jpg,png,gif,bmp,webp,heic,heif,svg|max:20480', // max 20MB, support iPhone HEIC/HEIF
+                'photo' => 'required|mimes:jpeg,jpg,png,gif,bmp,webp,heic,heif|max:10240',
             ]);
 
             if ($validator->fails()) {
@@ -203,8 +202,7 @@ class ReportController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Terjadi kesalahan saat mengupload foto: ' . $e->getMessage(),
-                'error' => $e->getMessage()
+                'message' => 'Terjadi kesalahan saat mengupload foto'
             ], 500);
         }
     }
@@ -266,8 +264,9 @@ class ReportController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Terjadi kesalahan saat melihat laporan: ' . $e->getMessage(),
-                'error' => $e->getMessage()
+                'message' => $e instanceof \Illuminate\Database\Eloquent\ModelNotFoundException
+                    ? 'Laporan tidak ditemukan'
+                    : 'Terjadi kesalahan saat melihat laporan'
             ], $e instanceof \Illuminate\Database\Eloquent\ModelNotFoundException ? 404 : 500);
         }
     }
@@ -380,8 +379,9 @@ class ReportController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Terjadi kesalahan saat memperbarui laporan: ' . $e->getMessage(),
-                'error' => $e->getMessage()
+                'message' => $e instanceof \Illuminate\Database\Eloquent\ModelNotFoundException
+                    ? 'Laporan tidak ditemukan'
+                    : 'Terjadi kesalahan saat memperbarui laporan'
             ], $e instanceof \Illuminate\Database\Eloquent\ModelNotFoundException ? 404 : 500);
         }
     }
@@ -426,8 +426,9 @@ class ReportController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Terjadi kesalahan saat menghapus laporan: ' . $e->getMessage(),
-                'error' => $e->getMessage()
+                'message' => $e instanceof \Illuminate\Database\Eloquent\ModelNotFoundException
+                    ? 'Laporan tidak ditemukan'
+                    : 'Terjadi kesalahan saat menghapus laporan'
             ], $e instanceof \Illuminate\Database\Eloquent\ModelNotFoundException ? 404 : 500);
         }
     }
@@ -462,8 +463,7 @@ class ReportController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Terjadi kesalahan saat mengambil daftar tipe masalah',
-                'error' => $e->getMessage()
+                'message' => 'Terjadi kesalahan saat mengambil daftar tipe masalah'
             ], 500);
         }
     }
@@ -540,8 +540,7 @@ class ReportController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal menghapus laporan',
-                'error' => $e->getMessage()
+                'message' => 'Gagal menghapus laporan'
             ], 500);
         }
     }

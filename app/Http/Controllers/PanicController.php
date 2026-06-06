@@ -347,9 +347,14 @@ class PanicController extends Controller
                 'message' => 'Laporan panik tidak ditemukan'
             ], 404);
         } catch (\Exception $e) {
+            Log::error('Failed to delete panic report', [
+                'panic_id' => $panicId,
+                'error' => $e->getMessage(),
+            ]);
+
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal menghapus laporan panik: ' . $e->getMessage()
+                'message' => 'Gagal menghapus laporan panik'
             ], 500);
         }
     }
@@ -652,10 +657,13 @@ class PanicController extends Controller
                 ]
             ]);
         } catch (\Exception $e) {
+            Log::error('Failed to bulk delete panic reports', [
+                'error' => $e->getMessage(),
+            ]);
+
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal menghapus laporan panik',
-                'error' => $e->getMessage()
+                'message' => 'Gagal menghapus laporan panik'
             ], 500);
         }
     }

@@ -22,6 +22,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        if (function_exists('header_remove') && !headers_sent()) {
+            header_remove('X-Powered-By');
+        }
+
         // Force HTTPS in production (Heroku)
         if (config('app.env') === 'production') {
             URL::forceScheme('https');

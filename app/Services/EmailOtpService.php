@@ -145,7 +145,7 @@ class EmailOtpService
     {
         try {
             // Verify OTP
-            $isValidOtp = EmailOtp::verifyPasswordResetOtp($user->email, $otp);
+            $isValidOtp = EmailOtp::verifyPasswordResetOtp($user->email, $otp, false);
 
             if (!$isValidOtp) {
                 return [
