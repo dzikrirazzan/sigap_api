@@ -8,6 +8,14 @@ use Illuminate\Support\Facades\Hash;
 
 class UserSeeder extends Seeder
 {
+    private function markEmailVerified(User $user): void
+    {
+        if (!$user->hasVerifiedEmail()) {
+            $user->email_verified_at = now();
+            $user->save();
+        }
+    }
+
     /**
      * Run the database seeds.
      */
@@ -47,7 +55,7 @@ class UserSeeder extends Seeder
         );
 
         // User biasa
-        User::firstOrCreate(
+        $regularUser = User::firstOrCreate(
             ['email' => 'user@gmail.com'],
             [
                 'name' => 'User Example',
@@ -55,5 +63,20 @@ class UserSeeder extends Seeder
                 'role' => 'user',
             ]
         );
+        $this->markEmailVerified($regularUser);
+
+        // User demo mahasiswa
+        $studentUser = User::firstOrCreate(
+            ['email' => 'dzikrirazzan@students.undip.ac.id'],
+            [
+                'name' => 'Dzikri Razzan Athallah',
+                'password' => Hash::make('#4thDimension'),
+                'role' => 'user',
+                'nim' => '24060122140123',
+                'jurusan' => 'Informatika',
+                'no_telp' => '081234567891',
+            ]
+        );
+        $this->markEmailVerified($studentUser);
     }
 }

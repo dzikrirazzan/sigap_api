@@ -44,7 +44,7 @@ apt update && apt upgrade -y
 
 # 2. Install basic dependencies
 print_status "Installing basic dependencies..."
-apt install -y software-properties-common curl wget git unzip
+apt install -y software-properties-common curl wget git unzip openssl
 
 # 3. Add PHP 8.2 repository
 print_status "Adding PHP 8.2 repository..."
@@ -85,9 +85,19 @@ systemctl enable nginx
 
 # 10. Configure MySQL
 print_status "Configuring MySQL..."
-mysql -e "CREATE DATABASE IF NOT EXISTS emergency_api;"
-mysql -e "CREATE USER IF NOT EXISTS 'emergency_user'@'localhost' IDENTIFIED BY 'emergency_password';"
-mysql -e "GRANT ALL PRIVILEGES ON emergency_api.* TO 'emergency_user'@'localhost';"
+DB_NAME="${DB_NAME:-emergency_api}"
+DB_USER="${DB_USER:-emergency_user}"
+DB_PASSWORD="${DB_PASSWORD:-$(openssl rand -hex 24)}"
+
+if [[ ! "$DB_NAME" =~ ^[A-Za-z0-9_]+$ ]] || [[ ! "$DB_USER" =~ ^[A-Za-z0-9_]+$ ]]; then
+    print_error "DB_NAME and DB_USER may only contain letters, numbers, and underscores"
+    exit 1
+fi
+
+DB_PASSWORD_SQL=$(printf "%s" "$DB_PASSWORD" | sed "s/'/''/g")
+mysql -e "CREATE DATABASE IF NOT EXISTS \`${DB_NAME}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+mysql -e "CREATE USER IF NOT EXISTS '${DB_USER}'@'localhost' IDENTIFIED BY '${DB_PASSWORD_SQL}';"
+mysql -e "GRANT ALL PRIVILEGES ON \`${DB_NAME}\`.* TO '${DB_USER}'@'localhost';"
 mysql -e "FLUSH PRIVILEGES;"
 
 # 11. Clone repository
@@ -100,10 +110,26 @@ cd emergency_api
 # 12. Set up environment
 print_status "Setting up environment..."
 cp .env.example .env
-sed -i 's/DB_DATABASE=.*/DB_DATABASE=emergency_api/' .env
-sed -i 's/DB_USERNAME=.*/DB_USERNAME=emergency_user/' .env
-sed -i 's/DB_PASSWORD=.*/DB_PASSWORD=emergency_password/' .env
-sed -i 's/REDIS_HOST=.*/REDIS_HOST=127.0.0.1/' .env
+
+set_env() {
+    local key="$1"
+    local value="$2"
+    local escaped
+    escaped=$(printf "%s" "$value" | sed -e 's/[\/&]/\\&/g')
+
+    if grep -q "^${key}=" .env; then
+        sed -i "s/^${key}=.*/${key}=${escaped}/" .env
+    else
+        printf "%s=%s\n" "$key" "$value" >> .env
+    fi
+}
+
+set_env APP_ENV production
+set_env APP_DEBUG false
+set_env DB_DATABASE "$DB_NAME"
+set_env DB_USERNAME "$DB_USER"
+set_env DB_PASSWORD "$DB_PASSWORD"
+set_env REDIS_HOST 127.0.0.1
 
 # 13. Install dependencies
 print_status "Installing Composer dependencies..."
@@ -244,7 +270,8 @@ print_success "Emergency API Deployment Completed!"
 echo
 echo "Service Information:"
 echo "API URL: http://$(hostname -I | awk '{print $1}')/"
-echo "Database: emergency_api"
+echo "Database: $DB_NAME"
+echo "Database user: $DB_USER"
 echo "Project Path: /var/www/emergency_api"
 echo "Logs: /var/www/emergency_api/storage/logs/laravel.log"
 echo
