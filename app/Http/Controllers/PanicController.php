@@ -9,6 +9,7 @@ use App\Models\RelawanShift;
 use App\Models\RelawanShiftPattern;
 use App\Services\WhatsAppService;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 
@@ -204,6 +205,13 @@ class PanicController extends Controller
         $userId = auth()->id();
         $user = auth()->user();
         $today = Carbon::now()->toDateString();
+
+        if (!in_array($user->role, [User::ROLE_ADMIN, User::ROLE_RELAWAN], true)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tidak memiliki akses. Hanya admin atau relawan yang dapat memperbarui status panik.'
+            ], 403);
+        }
 
         // Admin bisa update ke semua status, relawan hanya handling/resolved
         $allowedStatuses = $user->role === 'admin'
@@ -629,10 +637,18 @@ class PanicController extends Controller
                 ], 403);
             }
 
-            $request->validate([
+            $validator = Validator::make($request->all(), [
                 'start_date' => 'required|date',
                 'end_date' => 'required|date|after_or_equal:start_date',
             ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validasi gagal',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
 
             $startDate = Carbon::parse($request->start_date)->startOfDay();
             $endDate = Carbon::parse($request->end_date)->endOfDay();
