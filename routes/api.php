@@ -56,6 +56,13 @@ Route::middleware('sanctum.token')->group(function () {
     Route::delete('/reports/{reportId}', [ReportController::class, 'destroy']);
     Route::get('/problem-types', [ReportController::class, 'getProblemTypes']);
 
+    // ====== USER REPORTS (alias untuk relawan & student) ======
+    Route::get('/user/reports', [ReportController::class, 'index']);
+    Route::post('/user/reports', [ReportController::class, 'store']);
+    Route::get('/user/reports/{reportId}', [ReportController::class, 'show']);
+    Route::put('/user/reports/{reportId}', [ReportController::class, 'update']);
+    Route::delete('/user/reports/{reportId}', [ReportController::class, 'destroy']);
+
     // ====== PANIC BUTTON ======
     Route::post('/panic', [PanicController::class, 'store']);
     Route::get('/panic/today', [PanicController::class, 'today']);
@@ -78,8 +85,11 @@ Route::middleware('sanctum.token')->group(function () {
         Route::get('/users', [AuthController::class, 'getAllUsers']);
         Route::get('/relawan', [AuthController::class, 'getAllRelawan']);
         Route::post('/register-relawan', [AuthController::class, 'registerRelawan']);
+        Route::post('/relawan', [AuthController::class, 'registerRelawan']); // Alias for consistency
+        Route::put('/relawan/{id}', [AuthController::class, 'update']); // Update relawan
         Route::post('/register-admin', [AuthController::class, 'registerAdmin']);
         Route::delete('/users/{id}', [AuthController::class, 'destroy']);
+        Route::delete('/relawan/{id}', [AuthController::class, 'destroy']); // Alias for volunteer deletion
 
         // Panic Management
         Route::get('/panic', [PanicController::class, 'adminIndex']);
